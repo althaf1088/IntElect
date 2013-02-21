@@ -1,4 +1,4 @@
 Clips
 =====
 
-Clips Projects
+A basic elective recommendation system.
