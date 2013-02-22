@@ -9,25 +9,23 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (deftemplate student
-
-    (slot id (type SYMBOL) (allowed-symbols M F) (default M))
-
+    (slot id (default M))
     ;;PROFILING
-    (slot type (type SYMBOL) (allowed-symbols FULLTIME PARTTIME) (default FULLTIME))    
-    (slot branch (type SYMBOL) (allowed-symbols KE SE))
-    (slot worked (type SYMBOL) (allowed-symbols YES NO))
-    (slot experience (type SYMBOL) (allowed-symbols HIGH MEDIUM LOW))
+    (slot type (type SYMBOL) (allowed-symbols FULLTIME PARTTIME))    
+    (slot branch (type SYMBOL) (allowed-symbols KE SE NONE) (default NONE))
+    (slot worked (type SYMBOL) (allowed-symbols YES NO NONE) (default NONE))
+    (slot experience (type SYMBOL) (allowed-symbols HIGH MEDIUM LOW NONE) (default NONE))
 
     ;;TECHNICAL
-    (slot programming (type SYMBOL) (allowed-symbols YES NO))
-    (slot learn_programming (type SYMBOL) (allowed-symbols YES NO MAYBE))
-    (slot exp_programming (type SYMBOL) (allowed-symbols YES NO))      
-    (slot microsoft (type SYMBOL) (allowed-symbols YES NO MAYBE))
-    (slot opensource (type SYMBOL) (allowed-symbols YES NO MAYBE))
-    (slot exp_java (type SYMBOL) (allowed-symbols YES NO))
-    (slot frontend (type SYMBOL) (allowed-symbols YES NO MAYBE))
-    (slot ba (type SYMBOL) (allowed-symbols YES NO MAYBE))
-    (slot mobile (type SYMBOL) (allowed-symbols YES NO MAYBE))
+    (slot programming (type SYMBOL) (allowed-symbols LOW MEDIUM HIGH NONE) (default NONE))
+    (slot learn_programming (type SYMBOL) (allowed-symbols YES NO MAYBE NONE) (default NONE))
+    (slot exp_programming (type SYMBOL) (allowed-symbols YES NO NONE) (default NONE))      
+    (slot microsoft (type SYMBOL) (allowed-symbols YES NO MAYBE NONE) (default NONE))
+    (slot opensource (type SYMBOL) (allowed-symbols YES NO MAYBE NONE) (default NONE))
+    (slot exp_java (type SYMBOL) (allowed-symbols YES NO NONE) (default NONE))
+    (slot frontend (type SYMBOL) (allowed-symbols YES NO MAYBE NONE) (default NONE))
+    (slot ba (type SYMBOL) (allowed-symbols YES NO MAYBE NONE) (default NONE))
+    (slot mobile (type SYMBOL) (allowed-symbols YES NO MAYBE NONE) (default NONE))
     
     ;;MANAGERIAL
     (slot management (type SYMBOL) (allowed-symbols YES NO MAYBE))
@@ -196,7 +194,7 @@
 
     ;; Mobile Wireless Application Development
     (elective 
-        (code SG4202) 
+        (code MWAD) 
         (name MOBILE WIRELESS APPLICATION DEVELOPMENT) 
         (stream SE) 
         (setf THREE) 
@@ -235,7 +233,7 @@
 
     ;; Enterprise .NET II
     (elective 
-        (code SG5226) 
+        (code NETTWO) 
         (name ENTERPRISE .NET II) 
         (stream SE) 
         (setf TWO) 
@@ -243,7 +241,7 @@
         (type TECHNICAL) 
         (prg ADVANCED) 
         (mode CLASSROOM) 
-        (preq COURSE SG4210)
+        (preq COURSE NETONE)
     )
 
     ;; Open Source for the Enterprise
@@ -287,7 +285,7 @@
 
     ;; Software Prototyping
     (elective 
-        (code SG5230) 
+        (code SWP) 
         (name SOFTWARE PROTOTYPING) 
         (stream SE) 
         (setf ONE) 
@@ -351,7 +349,7 @@
     )
    ;; Dot NET 1 
     (elective 
-        (code SG4210) 
+        (code NETONE) 
         (name ENTERPRISE DOTNET1) 
         (stream SE) 
         (setf ONE) 
@@ -411,7 +409,7 @@
     )
    ;; Java 
     (elective 
-        (code SG5209) 
+        (code EJ) 
         (name ENTERPRISE JAVA) 
         (stream SE) 
         (setf SIX) 
@@ -555,7 +553,7 @@
 
     ;; Mobile Wireless Application Development
     (elective_goal 
-        (code SG4202) 
+        (code MWAD) 
         (name MOBILE WIRELESS APPLICATION DEVELOPMENT) 
         (stream SE) 
         (setf THREE) 
@@ -594,7 +592,7 @@
 
     ;; Enterprise .NET II
     (elective_goal 
-        (code SG5226) 
+        (code NETTWO) 
         (name ENTERPRISE .NET II) 
         (stream SE) 
         (setf TWO) 
@@ -602,7 +600,7 @@
         (type TECHNICAL) 
         (prg ADVANCED) 
         (mode CLASSROOM) 
-        (preq COURSE SG4210)
+        (preq COURSE NETONE)
     )
 
     ;; Open Source for the Enterprise
@@ -646,7 +644,7 @@
 
     ;; Software Prototyping
     (elective_goal 
-        (code SG5230) 
+        (code SWP) 
         (name SOFTWARE PROTOTYPING) 
         (stream SE) 
         (setf ONE) 
@@ -710,7 +708,7 @@
     )
    ;; Dot NET 1 
     (elective_goal 
-        (code SG4210) 
+        (code NETONE) 
         (name ENTERPRISE DOTNET1) 
         (stream SE) 
         (setf ONE) 
@@ -770,7 +768,7 @@
     )
    ;; Java 
     (elective_goal 
-        (code SG5209) 
+        (code EJ) 
         (name ENTERPRISE JAVA) 
         (stream SE) 
         (setf SIX) 
@@ -929,7 +927,7 @@
 )
 
 (defrule Work_Experience
-	(student (worked YES))
+	(student (id M) (worked YES))
 =>
 	(printout t crlf "How long have you been working? (l/m/h)")
         (bind ?response (read))
@@ -944,8 +942,112 @@
 	)
 )    
 
-;;;;;;;;;;;;;;;;;;;;;;;;;RECOMMENDATIONS;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+;;;;;;;;;;;;;;;;;;;; TECHNICAL ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;;TECHNICAL
+;;   (slot exp_java (type SYMBOL) (allowed-symbols YES NO))
+;;  (slot frontend (type SYMBOL) (allowed-symbols YES NO MAYBE))
+;; (slot ba (type SYMBOL) (allowed-symbols YES NO MAYBE))
+;;  (slot mobile (type SYMBOL) (allowed-symbols YES NO MAYBE))
+
+(defrule technical
+    (declare (salience 9))
+=>
+  	(printout t crlf "How would rate yourself in programming? (h/m/l)") 
+	(bind ?response (read))
+	(switch ?response
+		(case l then
+			(assert(student (id M) (programming LOW))))
+		(case m then
+			(assert(student (id M) (programming MEDIUM))))
+		(case h then
+			(assert(student (id M) (programming HIGH))))
+	)    
+
+  	(printout t crlf "Would you be interested in programming? (y/n/m)") 
+	(bind ?response (read))
+	(switch ?response
+		(case y then
+			(assert(student (id M) (learn_programming YES))))
+		(case n then
+			(assert(student (id M) (learn_programming NO))))
+		(case m then
+			(assert(student (id M) (learn_programming MAYBE))))
+	)    
+
+  	(printout t crlf "Do you have any experience in programming? (y/n)") 
+	(bind ?response (read))
+	(if (= (str-compare ?response y) 0)
+	       	then
+        		(assert (student (id M) (exp_programming YES)))	
+        	else 
+        		(assert (student (id M) (exp_programming NO)))
+        )
+
+)
+
+(defrule programming_advanced
+    ;; DO FOR ALL ADVANCED AND BASIC
+    (and (student (id M) (learn_programming YES)) (student (id M) (exp_programming YES)))
+    (elective (code MWAD) (cf ?cf1))
+    (elective (code EJ) (cf ?cf2))
+=>
+    (assert (elective_wgoal (code MWAD) (cf (* ?cf1 0.8))))
+    (assert (elective_wgoal (code EJ) (cf (* ?cf1 0.8))))
+)
+
+(defrule programming_basic
+    ;; DO FOR ALL BASIC
+    (student (id M) (learn_programming MAYBE))
+    (elective (code EI) (cf ?cf1))
+=>
+    (assert (elective_wgoal (code EI) (cf (* ?cf1 0.8))))
+)
+
+(defrule microsoft
+    (student (id M) (learn_programming YES))
+    (elective (code NETONE) (cf ?cf1))
+    (elective (code NETTWO) (cf ?cf2))
+=>
+    (printout t crlf "Would you interested in Microsoft based technologies? (y/n/m)")
+    	(bind ?response (read))
+	(switch ?response
+		(case y then
+            (assert (elective_wgoal (code NETONE) (cf (* ?cf1 0.9))))
+            (assert (elective_wgoal (code NETTWO) (cf (* ?cf1 0.9)))))
+		(case m then
+            (assert (elective_wgoal (code NETONE) (cf (* ?cf1 0.6))))
+            (assert (elective_wgoal (code NETTWO) (cf (* ?cf1 0.6)))))
+        (case n then
+            (assert (elective_wgoal (code NETONE) (cf (* ?cf1 -1.0))))
+            (assert (elective_wgoal (code NETTWO) (cf (* ?cf1 -1.0)))))
+	)    
+)
+
+(defrule opensource
+    (or (student (id M) (learn_programming YES)) (student (id M) (learn_programming MAYBE)))
+    (elective (code SWP) (cf ?cf1))
+=>
+    (printout t crlf "Would you interested in Open Source technologies? (y/n/m)")
+  	(bind ?response (read))
+	(switch ?response
+		(case y then
+            (assert (student (id M) (opensource YES)))
+            (assert (elective_wgoal (code SWP) (cf (* ?cf1 0.9)))))
+		(case m then
+            (assert (student (id M) (opensource MAYBE)))
+            (assert (elective_wgoal (code SWP) (cf (* ?cf1 0.6)))))
+        (case n then
+            (assert (student (id M) (opensource NO)))
+            (assert (elective_wgoal (code SWP) (cf (* ?cf1 -0.5)))))
+	)    
+
+)
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;RECOMMENDATIONS;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defrule FFIVE_get_value
 
@@ -958,7 +1060,6 @@
     ;;(printout t crlf "Value of cf is " ?*temp*)
 )
 
-
 (defrule FFIVE_get_recommendation
    	(declare (salience -10))
     (elective_goal (name $?n) (code ?c) (setf FIVE) (cf ?cf))
@@ -969,28 +1070,4 @@
     )
     
 )
-
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;(defrule Technical
-
-;;(defrule Managerial
-
-;;(defrule Infrastructure
-
-;;(defrule Innovation
-
-;;(defrule KE
-
-;;(defrule Final
-
-;;;;;;;;;;;;;;;;;;;; Final Recommendations;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-
-;;(defrule compile_recommendations
-;;	(declare (salience -10))
-;;	(SETA_goal (goal ?g) (cf ?cf1&:(>= ?cf1 0.7)))
-;;=>	
-;;	(printout t crlf "We recommend you the following :")
-;;	(printout t crlf "Elective: "?g (integer (* ?cf1 100)) "%")
-;;)
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
