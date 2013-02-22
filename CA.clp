@@ -181,7 +181,7 @@
 
     ;; Human Computer Interface
     (elective 
-        (code SG3204) 
+        (code HCI) 
         (name HUMAN COMPUTER INTERFACE) 
         (stream SE) 
         (setf EIGHT) 
@@ -207,7 +207,7 @@
 
     ;; Information Systems Security
     (elective 
-        (code SG4205) 
+        (code ISS) 
         (name INFORMATION SYSTEMS SECURITY) 
         (stream SE) 
         (setf THREE) 
@@ -350,7 +350,7 @@
    ;; Dot NET 1 
     (elective 
         (code NETONE) 
-        (name ENTERPRISE DOTNET1) 
+        (name ENTERPRISE .NET I) 
         (stream SE) 
         (setf ONE) 
         (setp ONE) 
@@ -540,7 +540,7 @@
 
     ;; Human Computer Interface
     (elective_goal 
-        (code SG3204) 
+        (code HCI) 
         (name HUMAN COMPUTER INTERFACE) 
         (stream SE) 
         (setf EIGHT) 
@@ -566,7 +566,7 @@
 
     ;; Information Systems Security
     (elective_goal 
-        (code SG4205) 
+        (code ISS) 
         (name INFORMATION SYSTEMS SECURITY) 
         (stream SE) 
         (setf THREE) 
@@ -709,7 +709,7 @@
    ;; Dot NET 1 
     (elective_goal 
         (code NETONE) 
-        (name ENTERPRISE DOTNET1) 
+        (name ENTERPRISE .NET I) 
         (stream SE) 
         (setf ONE) 
         (setp ONE) 
@@ -946,12 +946,6 @@
 
 ;;;;;;;;;;;;;;;;;;;; TECHNICAL ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-;;TECHNICAL
-;;   (slot exp_java (type SYMBOL) (allowed-symbols YES NO))
-;;  (slot frontend (type SYMBOL) (allowed-symbols YES NO MAYBE))
-;; (slot ba (type SYMBOL) (allowed-symbols YES NO MAYBE))
-;;  (slot mobile (type SYMBOL) (allowed-symbols YES NO MAYBE))
-
 (defrule technical
     (declare (salience 9))
 =>
@@ -1046,11 +1040,161 @@
 
 )
 
+(defrule java
+    (or (student (id M) (opensource YES)) (student (id M) (opensource MAYBE)))
+    (or (student (id M) (programming HIGH)) (student (id M) (programming MEDIUM)))
 
-;;;;;;;;;;;;;;;;;;;;;;;;;RECOMMENDATIONS;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+    (elective (code EJ) (cf ?cf1))
+=>
+    (printout t crlf "Do you have experience in Java Progamming?(y/n)")
+      	(bind ?response (read))
+	(switch ?response
+		(case y then
+            (assert (student (id M) (exp_java YES)))
+            (assert (elective_wgoal (code EJ) (cf (* ?cf1 0.9)))))
+        (case n then
+            (assert (student (id M) (exp_java NO)))
+            (assert (elective_wgoal (code EJ) (cf (* ?cf1 -0.5)))))
+	)    
+)
+
+(defrule frontend
+    (or (student (id M) (programming HIGH)) (student (id M) (programming MEDIUM)))
+    (student (id M) (exp_programming YES))
+    (elective (code MWAD) (cf ?cf1))
+=>
+    (printout t crlf "Would you be interested in Frontend development? (y/n/m)")
+  	(bind ?response (read))
+	(switch ?response
+		(case y then
+            (assert (student (id M) (frontend YES)))
+            (assert (elective_wgoal (code MWAD) (cf (* ?cf1 0.9)))))
+		(case m then
+            (assert (student (id M) (frontend MAYBE)))
+            (assert (elective_wgoal (code MWAD) (cf (* ?cf1 0.4)))))
+        (case n then
+            (assert (student (id M) (frontend NO)))
+            (assert (elective_wgoal (code MWAD) (cf (* ?cf1 -1.0)))))
+	)    
+    
+)
+
+(defrule ba
+    (elective (code ISS) (cf ?cf1))
+=>
+    (printout t crlf "How about subjects related to analytics? (y/n/m)")
+  	(bind ?response (read))
+	(switch ?response
+		(case y then
+            (assert (student (id M) (ba YES)))
+            (assert (elective_wgoal (code ISS) (cf (* ?cf1 0.9)))))
+		(case m then
+            (assert (student (id M) (ba MAYBE)))
+            (assert (elective_wgoal (code ISS) (cf (* ?cf1 0.4)))))
+        (case n then
+            (assert (student (id M) (ba NO)))
+            (assert (elective_wgoal (code ISS) (cf (* ?cf1 -1.0)))))
+	)
+)
+
+(defrule mobile
+    (student (id M) (learn_programming YES))
+    (or (student (id M) (programming HIGH)) (student (id M) (programming MEDIUM)))
+    (elective (code MWAD) (cf ?cf1))
+=>
+    (printout t crlf "Interested in IOS App development?(y/n)")
+  	(bind ?response (read))
+	(switch ?response
+		(case y then
+            (assert (student (id M) (mobile YES)))
+            (assert (elective_wgoal (code MWAD) (cf (* ?cf1 0.9)))))
+		(case m then
+            (assert (student (id M) (mobile MAYBE)))
+            (assert (elective_wgoal (code MWAD) (cf (* ?cf1 0.4)))))
+        (case n then
+            (assert (student (id M) (mobile NO)))
+            (assert (elective_wgoal (code MWAD) (cf (* ?cf1 -1.0)))))
+	)
+)
+
+;;;;;;;;;;;;;;;;;;;;;;;;;FULL TIME RECOMMENDATIONS;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+(defrule FONE_get_value
+	(elective_goal (code ?c) (setf FONE) (cf ?cf))
+=>	
+    (if (> ?cf ?*FONE*)
+        then
+    (bind ?*FONE* ?cf)        
+    )
+)
+
+(defrule FONE_get_recommendation
+   	(declare (salience -10))
+    (elective_goal (name $?n) (code ?c) (setf ONE) (cf ?cf))
+=>
+    (if (= ?cf ?*FONE*)
+    then
+        (printout t crlf "FULL TIME PART ONE Elective(s): " ?n " Code: " ?c crlf)
+    )
+)
+
+(defrule FTWO_get_value
+	(elective_goal (code ?c) (setf FTWO) (cf ?cf))
+=>	
+    (if (> ?cf ?*FTWO*)
+        then
+    (bind ?*FTWO* ?cf)        
+    )
+)
+
+(defrule FTWO_get_recommendation
+   	(declare (salience -10))
+    (elective_goal (name $?n) (code ?c) (setf TWO) (cf ?cf))
+=>
+    (if (= ?cf ?*FTWO*)
+    then
+        (printout t crlf "FULL TIME PART TWO Elective(s): " ?n " Code: " ?c crlf)
+    )
+)
+
+(defrule FTHREE_get_value
+	(elective_goal (code ?c) (setf THREE) (cf ?cf))
+=>	
+    (if (> ?cf ?*FTHREE*)
+        then
+    (bind ?*FTHREE* ?cf)        
+    )
+)
+
+(defrule FTHREE_get_recommendation
+   	(declare (salience -10))
+    (elective_goal (name $?n) (code ?c) (setf THREE) (cf ?cf))
+=>
+    (if (= ?cf ?*FTHREE*)
+    then
+        (printout t crlf "FULL TIME PART THREE Elective(s): " ?n " Code: " ?c crlf)
+    )
+)
+
+(defrule FFOUR_get_value
+	(elective_goal (code ?c) (setf FOUR) (cf ?cf))
+=>	
+    (if (> ?cf ?*FFOUR*)
+        then
+    (bind ?*FFOUR* ?cf)        
+    )
+)
+
+(defrule FFOUR_get_recommendation
+   	(declare (salience -10))
+    (elective_goal (name $?n) (code ?c) (setf FOUR) (cf ?cf))
+=>
+    (if (= ?cf ?*FFOUR*)
+    then
+        (printout t crlf "FULL TIME PART FOUR Elective(s): " ?n " Code: " ?c crlf)
+    )
+)
 
 (defrule FFIVE_get_value
-
 	(elective_goal (code ?c) (setf FIVE) (cf ?cf))
 =>	
     (if (> ?cf ?*FFIVE*)
@@ -1068,6 +1212,59 @@
     then
         (printout t crlf "FULL TIME PART FIVE Elective(s): " ?n " Code: " ?c crlf)
     )
-    
+)
+
+(defrule FSIX_get_value
+	(elective_goal (code ?c) (setf SIX) (cf ?cf))
+=>	
+    (if (> ?cf ?*FSIX*)
+        then
+    (bind ?*FSIX* ?cf)        
+    )
+)
+(defrule FSIX_get_recommendation
+   	(declare (salience -10))
+    (elective_goal (name $?n) (code ?c) (setf SIX) (cf ?cf))
+=>
+    (if (= ?cf ?*FSIX*)
+    then
+        (printout t crlf "FULL TIME PART SIX Elective(s): " ?n " Code: " ?c crlf)
+    )
+)
+
+(defrule FSEVEN_get_value
+	(elective_goal (code ?c) (setf SEVEN) (cf ?cf))
+=>	
+    (if (> ?cf ?*FSEVEN*)
+        then
+    (bind ?*FSEVEN* ?cf)        
+    )
+)
+(defrule FSEVEN_get_recommendation
+   	(declare (salience -10))
+    (elective_goal (name $?n) (code ?c) (setf SEVEN) (cf ?cf))
+=>
+    (if (= ?cf ?*FSEVEN*)
+    then
+        (printout t crlf "FULL TIME PART SEVEN Elective(s): " ?n " Code: " ?c crlf)
+    )
+)
+
+(defrule FEIGHT_get_value
+	(elective_goal (code ?c) (setf EIGHT) (cf ?cf))
+=>	
+    (if (> ?cf ?*FEIGHT*)
+        then
+    (bind ?*FEIGHT* ?cf)        
+    )
+)
+(defrule FEIGHT_get_recommendation
+   	(declare (salience -10))
+    (elective_goal (name $?n) (code ?c) (setf EIGHT) (cf ?cf))
+=>
+    (if (= ?cf ?*FEIGHT*)
+    then
+        (printout t crlf "FULL TIME PART EIGHT Elective(s): " ?n " Code: " ?c crlf)
+    )
 )
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
