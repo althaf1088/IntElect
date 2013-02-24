@@ -1,7 +1,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Basic Electives Recommendation System
 ;; TO-DO
-;; 1. Need to write rules for individual subjects, IMP!
+;; 1. Need to write rules for all except profiling
 ;; 2. Rules for individual subjects based on student profile
 ;; 3. Final recommendation rules for PARTTIME ONLY.
 ;;
@@ -97,9 +97,9 @@
 
 (defglobal
 	?*temp* = 0
-    ?*FONE* = 0.5
-    ?*FTWO* = 0.5
-    ?*FTHREE* = 0.5
+    ?*FONE* = 0
+    ?*FTWO* = 0
+    ?*FTHREE* = 0
     ?*FFOUR* = 0
     ?*FFIVE* = 0
     ?*FSIX* = 0
@@ -1054,7 +1054,7 @@
             (assert (elective_wgoal (code EJ) (cf (* ?cf1 0.9)))))
         (case n then
             (assert (student (id M) (exp_java NO)))
-            (assert (elective_wgoal (code EJ) (cf (* ?cf1 -0.5)))))
+            (assert (elective_wgoal (code EJ) (cf (* ?cf1 0.1)))))
 	)    
 )
 
@@ -1074,7 +1074,7 @@
             (assert (elective_wgoal (code MWAD) (cf (* ?cf1 0.4)))))
         (case n then
             (assert (student (id M) (frontend NO)))
-            (assert (elective_wgoal (code MWAD) (cf (* ?cf1 -1.0)))))
+            (assert (elective_wgoal (code MWAD) (cf (* ?cf1 0.1)))))
 	)    
     
 )
@@ -1093,7 +1093,7 @@
             (assert (elective_wgoal (code ISS) (cf (* ?cf1 0.4)))))
         (case n then
             (assert (student (id M) (ba NO)))
-            (assert (elective_wgoal (code ISS) (cf (* ?cf1 -1.0)))))
+            (assert (elective_wgoal (code ISS) (cf (* ?cf1 0.1)))))
 	)
 )
 
@@ -1113,275 +1113,10 @@
             (assert (elective_wgoal (code MWAD) (cf (* ?cf1 0.4)))))
         (case n then
             (assert (student (id M) (mobile NO)))
-            (assert (elective_wgoal (code MWAD) (cf (* ?cf1 -1.0)))))
+            (assert (elective_wgoal (code MWAD) (cf (* ?cf1 0.1)))))
 	)
 )
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;MANAGEMENT;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-(defrule management
-    (declare (salience 8))
-    (elective (code EI) (cf ?cf1))
-=>
-    (printout t crlf "Would you be interested in management?(y/n/m)")
-    (bind ?response (read))
-    	(switch ?response
-		(case y then
-            (assert (student (id M) (management YES)))
-            (assert (elective_wgoal (code EI) (cf (* ?cf1 0.9)))))
-		(case m then
-            (assert (student (id M) (management MAYBE)))
-            (assert (elective_wgoal (code EI) (cf (* ?cf1 0.4)))))
-        (case n then
-            (assert (student (id M) (management NO)))
-            (assert (elective_wgoal (code EI) (cf (* ?cf1 0.1)))))
-	)
-)
-
-(defrule exp_management
-    (or (student (id M) (management YES)) (student (id M) (management MAYBE)))
-    (elective (code BPM) (cf ?cf1))
-=>
-    (printout t crlf "Do you have any experience in management?(y/n)")
-    (bind ?response (read))
-    	(switch ?response
-		(case y then
-            (assert (student (id M) (exp_management YES)))
-            (assert (elective_wgoal (code BPM) (cf (* ?cf1 0.9)))))
-        (case n then
-            (assert (student (id M) (exp_management NO)))
-            (assert (elective_wgoal (code BPM) (cf (* ?cf1 0.1)))))
-	)
-)
-
-(defrule pm_em
-    (or (student (id M) (management YES)) (student (id M) (management MAYBE)))
-    (elective (code ASPM) (cf ?cf1))
-    (elective (code SMPI) (cf ?cf2))
-    (elective (code MITOS) (cf ?cf3))    
-=>
-    (printout t crlf "Interested in project and enterprise management?(y/n/m)")
-    (bind ?response (read))
-    	(switch ?response
-		(case y then
-            (assert (student (id M) (pm_em YES)))
-            (assert (elective_wgoal (code ASPM) (cf (* ?cf1 0.9))))
-            (assert (elective_wgoal (code SMPI) (cf (* ?cf1 0.9))))
-            (assert (elective_wgoal (code MITOS) (cf (* ?cf1 0.9)))))        
-        (case n then
-            (assert (student (id M) (pm_em NO)))
-            (assert (elective_wgoal (code ASPM) (cf (* ?cf1 0.9))))
-            (assert (elective_wgoal (code SMPI) (cf (* ?cf1 0.9))))
-            (assert (elective_wgoal (code MITOS) (cf (* ?cf1 0.9)))))        
-        )
-)
-
-;;;;;;;;;;;;;;;;;;;;;;;;; INFRASTRUCTURE ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-(defrule infrastructure
-    (declare (salience 7))
-    (elective (code CC) (cf ?cf1))
-=>
-    (printout t crlf "How about something related to applied IT infrastructure?(y/n/m)")
-    (bind ?response (read))
-  	(switch ?response
-		(case y then
-            (assert (student (id M) (infrastructure YES)))
-            (assert (elective_wgoal (code CC) (cf (* ?cf1 0.9)))))
-        (case n then
-            (assert (student (id M) (infrastructure NO)))
-            (assert (elective_wgoal (code CC) (cf (* ?cf1 0.1)))))
-        (case m then
-            (assert (student (id M) (infrastructure MAYBE)))
-            (assert (elective_wgoal (code CC) (cf (* ?cf1 0.6)))))
-    )
-)
-
-(defrule applied_opensource 
-    (or (student (id M) (infrastructure YES)) (student (id M) (infrastructure MAYBE)))
-    (or (student (id M) (opensource YES)) (student (id M) (opensource MAYBE)))
-    (elective (code OSE) (cf ?cf1))
-=>
-    (printout t crlf "Would you like to learn about applying opensource tech into ?(y/n/m)")
-    (bind ?response (read))
-  	(switch ?response
-		(case y then
-            (assert (student (id M) (applied_opensource  YES)))
-            (assert (elective_wgoal (code OSE) (cf (* ?cf1 0.9)))))
-        (case n then
-            (assert (student (id M) (applied_opensource  NO)))
-            (assert (elective_wgoal (code OSE) (cf (* ?cf1 0.1)))))
-        (case m then
-            (assert (student (id M) (applied_opensource  MAYBE)))
-            (assert (elective_goal (code OSE) (cf (* ?cf1 0.6)))))
-    )
-)
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; KE ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;
-(defrule ke
-    (declare (salience 6))
-    (student (id M) (branch SE))
-=>
-    (printout t "Are you interested in applying KE techniques to solve real world problems? (y/n/m)")
-    (bind ?response (read))
-    (switch ?response
-		(case y then
-            (assert (student (id M) (ke  YES))))
-        (case n then
-            (assert (student (id M) (ke  NO))))
-        (case m then
-            (assert (student (id M) (ke  MAYBE))))
-    )
-)
-
-(defrule soft_computing
-    (or (student (id M) (branch SE)) (student (id M) (ke YES)) (student (id M) (ke MAYBE)))
-    (elective (code GA) (cf ?cf1))
-=>
-    (printout t crlf "Interested in soft computing techniques? (y/n/m)")
-    (bind ?response (read))
-    (switch ?response
-		(case y then
-            (assert (student (id M) (soft_computing  YES)))
-            (assert (elective_wgoal (code GA) (cf (* ?cf1 0.9)))))
-        (case n then
-            (assert (student (id M) (soft_computing  NO)))
-            (assert (elective_wgoal (code GA) (cf (* ?cf1 0.1)))))
-        (case m then
-            (assert (student (id M) (soft_computing  MAYBE)))
-            (assert (elective_wgoal (code GA) (cf (* ?cf1 0.6)))))
-    )
-)
-
-(defrule search
-    (or (student (id M) (branch SE)) (student (id M) (ke YES)) (student (id M) (ke MAYBE)))
-    (elective (code TM) (cf ?cf1))
-=>
-    (printout t crlf "Interested in applying search techniques to textual data? (y/n/m)")
-    (bind ?response (read))
-    (switch ?response
-		(case y then
-            (assert (student (id M) (search  YES)))
-            (assert (elective_wgoal (code TM) (cf (* ?cf1 0.9)))))
-        (case n then
-            (assert (student (id M) (search  NO)))
-            (assert (elective_wgoal (code TM) (cf (* ?cf1 0.1)))))
-        (case m then
-            (assert (student (id M) (search  MAYBE)))
-            (assert (elective_wgoal (code TM) (cf (* ?cf1 0.6)))))
-    )
-)
-
-(defrule data_analysis
-    (or (student (id M) (branch SE)) (student (id M) (ke YES)) (student (id M) (ke MAYBE)))
-    (elective (code BADM) (cf ?cf1))
-=>
-    (printout t crlf "Interested in data anaylsis? (y/n/m)")
-    (bind ?response (read))
-    (switch ?response
-		(case y then
-            (assert (student (id M) (data_analysis  YES)))
-            (assert (elective_wgoal (code BADM) (cf (* ?cf1 0.9)))))
-        (case n then
-            (assert (student (id M) (data_analysis  NO)))
-            (assert (elective_wgoal (code BADM) (cf (* ?cf1 0.1)))))
-        (case m then
-            (assert (student (id M) (data_analysis  MAYBE)))
-            (assert (elective_wgoal (code BADM) (cf (* ?cf1 0.6)))))
-    )
-)
-
-(defrule kbs
-    (or (student (id M) (branch SE)) (student (id M) (ke YES)) (student (id M) (ke MAYBE)))
-    (or (student (id M) (management YES)) (student (id M) (management MAYBE)))
-    (elective (code KM) (cf ?cf1))
-=>
-    (printout t crlf "How to apply KE techniques in real world situations? (y/n/m)")
-    (bind ?response (read))
-    (switch ?response
-		(case y then
-            (assert (student (id M) (kbs  YES)))
-            (assert (elective_wgoal (code KM) (cf (* ?cf1 0.9)))))
-        (case n then
-            (assert (student (id M) (kbs  NO)))
-            (assert (elective_wgoal (code KM) (cf (* ?cf1 0.1)))))
-        (case m then
-            (assert (student (id M) (kbs  MAYBE)))
-            (assert (elective_wgoal (code KM) (cf (* ?cf1 0.6)))))
-    )
-)
-
-;;;;;;;;;;;;;;;;;;;;;;;; INNOVATION AND RESEARCH ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
- 
-(defrule ideator
-    (declare (salience 5))
-    (elective (code RAITONE) (cf ?cf1))
-    (elective (code RAITTWO) (cf ?cf2))
-=>
-    (printout t crlf "Do you consider yourself an ideator?(y/n/m)")
-    (bind ?response (read))
-    (switch ?response
-		(case y then
-            (assert (student (id M) (ideator  YES))))
-        (case n then
-            (assert (student (id M) (ideator  NO)))
-            (assert (elective_wgoal (code RAITONE) (cf (* ?cf1 0.01))))
-            (assert (elective_wgoal (code RAITTWO) (cf (* ?cf2 0.01)))))
-        (case m then
-            (assert (student (id M) (ideator  MAYBE))))
-    )
-)
-
-(defrule research
-    (student (id M) (ideator YES))
-    (elective (code RAITONE) (cf ?cf1))
-    (elective (code RAITTWO) (cf ?cf2))
-=>
-    (printout t crlf "Would you like to take up research?(y/n)")
-    (bind ?response (read))
-    (switch ?response
-		(case y then
-            (assert (student (id M) (research  YES))))
-        (case n then
-            (assert (student (id M) (research  NO))))
-    )
-)
-
-(defrule field_research
-    ;; DO FOR SE
-    (and 
-    (student (id M) (ideator YES))
-    (student (id M) (research YES))
-    (student (id M) (branch SE)))
-    (elective (code RAITONE) (cf ?cf1))
-    (elective (code RAITTWO) (cf ?cf2))
-=> 
-    (assert (elective_wgoal (code RAITONE) (cf (* ?cf1 0.99))))
-    (assert (elective_wgoal (code RAITTWO) (cf (* ?cf2 0.99))))
-)
-
-(defrule proposal_research
-    ;; DO FOR KE
-    (and 
-    (student (id M) (ideator YES))
-    (student (id M) (research YES))
-    (student (id M) (branch KE)))
-    (elective (code RAITONE) (cf ?cf1))
-    (elective (code RAITTWO) (cf ?cf2))
-=>
-    (printout t crlf "Do you have a good research proposal?(y/n)")
-    (bind ?response (read))
-    (switch ?response
-		(case y then
-            (assert (student (id M) (ideator  YES)))
-            (assert (elective_wgoal (code RAITONE) (cf (* ?cf1 0.99))))
-            (assert (elective_wgoal (code RAITTWO) (cf (* ?cf2 0.99)))))
-        (case n then
-            (assert (student (id M) (ideator  NO)))
-            (assert (elective_wgoal (code RAITONE) (cf (* ?cf1 0.4))))
-            (assert (elective_wgoal (code RAITTWO) (cf (* ?cf2 0.4)))))
-    )
-)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;FULL TIME RECOMMENDATIONS;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (defrule FONE_get_value
@@ -1394,7 +1129,7 @@
 )
 
 (defrule FONE_get_recommendation
-   	(declare (salience -10))
+   	(declare (salience -11))
     (elective_goal (name $?n) (code ?c) (setf ONE) (cf ?cf))
 =>
     (if (= ?cf ?*FONE*)
@@ -1413,7 +1148,7 @@
 )
 
 (defrule FTWO_get_recommendation
-   	(declare (salience -10))
+   	(declare (salience -12))
     (elective_goal (name $?n) (code ?c) (setf TWO) (cf ?cf))
 =>
     (if (= ?cf ?*FTWO*)
@@ -1432,7 +1167,7 @@
 )
 
 (defrule FTHREE_get_recommendation
-   	(declare (salience -10))
+   	(declare (salience -13))
     (elective_goal (name $?n) (code ?c) (setf THREE) (cf ?cf))
 =>
     (if (= ?cf ?*FTHREE*)
@@ -1451,7 +1186,7 @@
 )
 
 (defrule FFOUR_get_recommendation
-   	(declare (salience -10))
+   	(declare (salience -14))
     (elective_goal (name $?n) (code ?c) (setf FOUR) (cf ?cf))
 =>
     (if (= ?cf ?*FFOUR*)
@@ -1471,7 +1206,7 @@
 )
 
 (defrule FFIVE_get_recommendation
-   	(declare (salience -10))
+   	(declare (salience -15))
     (elective_goal (name $?n) (code ?c) (setf FIVE) (cf ?cf))
 =>
     (if (= ?cf ?*FFIVE*)
@@ -1489,7 +1224,7 @@
     )
 )
 (defrule FSIX_get_recommendation
-   	(declare (salience -10))
+   	(declare (salience -16))
     (elective_goal (name $?n) (code ?c) (setf SIX) (cf ?cf))
 =>
     (if (= ?cf ?*FSIX*)
@@ -1507,7 +1242,7 @@
     )
 )
 (defrule FSEVEN_get_recommendation
-   	(declare (salience -10))
+   	(declare (salience -17))
     (elective_goal (name $?n) (code ?c) (setf SEVEN) (cf ?cf))
 =>
     (if (= ?cf ?*FSEVEN*)
@@ -1525,7 +1260,7 @@
     )
 )
 (defrule FEIGHT_get_recommendation
-   	(declare (salience -10))
+   	(declare (salience -18))
     (elective_goal (name $?n) (code ?c) (setf EIGHT) (cf ?cf))
 =>
     (if (= ?cf ?*FEIGHT*)
