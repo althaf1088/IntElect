@@ -12,7 +12,8 @@ import java.util.MissingResourceException;
 import CLIPSJNI.*;
 
 
-class AutoDemo implements ActionListener
+
+class BERecommender implements ActionListener
   {  
    JLabel displayLabel;
    JButton nextButton;
@@ -24,8 +25,8 @@ class AutoDemo implements ActionListener
    Environment clips;
    boolean isExecuting = false;
    Thread executionThread;
-
-   AutoDemo()
+      
+   BERecommender()
      {  
       try
         {
@@ -37,29 +38,11 @@ class AutoDemo implements ActionListener
          return;
         }
       
-      /*================================*/
-      /* Create a new JFrame container. */
-      /*================================*/
-     
-      JFrame jfrm = new JFrame(autoResources.getString("AutoDemo"));  
- 
-      /*=============================*/
-      /* Specify FlowLayout manager. */
-      /*=============================*/
-        
-      jfrm.getContentPane().setLayout(new GridLayout(3,1));  
- 
-      /*=================================*/
-      /* Give the frame an initial size. */
-      /*=================================*/
-     
-      jfrm.setSize(350,200);  
-  
-      /*=============================================================*/
-      /* Terminate the program when the user closes the application. */
-      /*=============================================================*/
-     
-      jfrm.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);  
+      
+      JFrame frame = new JFrame(autoResources.getString("Title"));  
+      frame.getContentPane().setLayout(new GridLayout(3,1));  
+      frame.setSize(350,200);     
+      frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);  
  
       /*===========================*/
       /* Create the display panel. */
@@ -96,17 +79,17 @@ class AutoDemo implements ActionListener
       /* Add the panels to the content pane. */
       /*=====================================*/
       
-      jfrm.getContentPane().add(displayPanel); 
-      jfrm.getContentPane().add(choicesPanel); 
-      jfrm.getContentPane().add(buttonPanel); 
+      frame.getContentPane().add(displayPanel); 
+      frame.getContentPane().add(choicesPanel); 
+      frame.getContentPane().add(buttonPanel); 
 
       /*========================*/
-      /* Load the auto program. */
+      /* Load the electives program. */
       /*========================*/
       
       clips = new Environment();
       
-      clips.load("autodemo.clp");
+      clips.load("basic_electives.clp");
       
       clips.reset();
       runAuto();
@@ -114,8 +97,8 @@ class AutoDemo implements ActionListener
       /*====================*/
       /* Display the frame. */
       /*====================*/
-      
-      jfrm.setVisible(true);  
+      frame.setLocationRelativeTo(null);
+      frame.setVisible(true);  
      }  
 
    /****************/
@@ -135,8 +118,7 @@ class AutoDemo implements ActionListener
       /* Get the current UI state. */
       /*===========================*/
       
-      evalStr = "(find-all-facts ((?f UI-state)) " +
-                                "(eq ?f:id " + currentID + "))";
+      evalStr = "(find-all-facts ((?f UI-state)) (eq ?f:id " + currentID + "))";
       
       PrimitiveValue fv = clips.eval(evalStr).get(0);
       
@@ -146,8 +128,10 @@ class AutoDemo implements ActionListener
       
       if (fv.getFactSlot("state").toString().equals("final"))
         { 
-         nextButton.setActionCommand("Restart");
-         nextButton.setText(autoResources.getString("Restart")); 
+         nextButton.setActionCommand("Final");
+         nextButton.setText("Show Recommendations");
+         prevButton.setText("Try Again");
+         prevButton.setActionCommand("Restart");
          prevButton.setVisible(true);
         }
       else if (fv.getFactSlot("state").toString().equals("initial"))
@@ -160,7 +144,7 @@ class AutoDemo implements ActionListener
         { 
          nextButton.setActionCommand("Next");
          nextButton.setText(autoResources.getString("Next"));
-         prevButton.setVisible(true);
+         prevButton.setVisible(false);
         }
       
       /*=====================*/
@@ -169,11 +153,14 @@ class AutoDemo implements ActionListener
       
       choicesPanel.removeAll();
       choicesButtons = new ButtonGroup();
-            
+      
+      //get valid choices from rule
       PrimitiveValue pv = fv.getFactSlot("valid-answers");
       
+      //get current selected value for response
       String selected = fv.getFactSlot("response").toString();
      
+      //build up the radio buttons based on valid choices.      
       for (int i = 0; i < pv.size(); i++) 
         {
          PrimitiveValue bv = pv.get(i);
@@ -276,12 +263,15 @@ class AutoDemo implements ActionListener
       if (ae.getActionCommand().equals("Next"))
         {
          if (choicesButtons.getButtonCount() == 0)
-           { clips.assertString("(next " + currentID + ")"); }
+           { clips.assertString("(next " + currentID + ")"); 
+           		System.out.println(clips.eval("(facts)"));
+           }
          else
            {
             clips.assertString("(next " + currentID + " " +
                                choicesButtons.getSelection().getActionCommand() + 
                                ")");
+            System.out.println(clips.eval("(facts)"));
            }
            
          runAuto();
@@ -290,7 +280,11 @@ class AutoDemo implements ActionListener
         { 
          clips.reset(); 
          runAuto();
+         
         }
+      else if (ae.getActionCommand().equals("Final")){
+    	  JOptionPane.showMessageDialog(null, "Recommended " + getSubject(), "Your Recommendations!", 1); 
+      }
       else if (ae.getActionCommand().equals("Prev"))
         {
          clips.assertString("(prev " + currentID + ")");
@@ -301,10 +295,8 @@ class AutoDemo implements ActionListener
    /*****************/
    /* wrapLabelText */
    /*****************/  
-   private void wrapLabelText(
-     JLabel label, 
-     String text) 
-     {
+   private void wrapLabelText( JLabel label, String text){
+	  
       FontMetrics fm = label.getFontMetrics(label.getFont());
       Container container = label.getParent();
       int containerWidth = container.getWidth();
@@ -353,14 +345,30 @@ class AutoDemo implements ActionListener
    
       label.setText(real.toString());
      }
-     
+   
+   
+	public String getSubject() throws Exception{
+
+		String cname = null;
+
+		PrimitiveValue pv, fv = null;
+		String evalStr = "(getSubject)";
+		pv = clips.eval(evalStr);
+		
+		fv = pv.get(0);
+        cname = fv.getFactSlot("name").toString();
+        
+        return cname;
+	}
+
+   
    public static void main(String args[])
      {  
       // Create the frame on the event dispatching thread.  
       SwingUtilities.invokeLater(
         new Runnable() 
           {  
-           public void run() { new AutoDemo(); }  
+           public void run() { new BERecommender(); }  
           });   
      }  
   }
