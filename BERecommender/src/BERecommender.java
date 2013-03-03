@@ -5,6 +5,7 @@ import java.awt.event.*;
 
 import java.text.BreakIterator;
 
+import java.util.ArrayList;
 import java.util.Locale;
 import java.util.ResourceBundle;
 import java.util.MissingResourceException;
@@ -41,9 +42,10 @@ class BERecommender implements ActionListener
       
       JFrame frame = new JFrame(autoResources.getString("Title"));  
       frame.getContentPane().setLayout(new GridLayout(3,1));  
-      frame.setSize(350,200);     
+      frame.setSize(500,300); //350x200     
       frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);  
- 
+      frame.setResizable(false);
+      
       /*===========================*/
       /* Create the display panel. */
       /*===========================*/
@@ -137,7 +139,7 @@ class BERecommender implements ActionListener
       else if (fv.getFactSlot("state").toString().equals("initial"))
         {
          nextButton.setActionCommand("Next");
-         nextButton.setText(autoResources.getString("Next"));
+         nextButton.setText(autoResources.getString("Continue"));
          prevButton.setVisible(false);
         }
       else
@@ -283,7 +285,14 @@ class BERecommender implements ActionListener
          
         }
       else if (ae.getActionCommand().equals("Final")){
-    	  JOptionPane.showMessageDialog(null, "Recommended " + getSubject(), "Your Recommendations!", 1); 
+    	  String recoString = getFulltimeFinalSubjects();
+    	  
+    	  //Print DS all 
+    	  ArrayList<Elective> list = getFullTimeSubjects();
+    	  for (Elective e: list)
+    		  System.out.println(e);
+    	  
+    	  JOptionPane.showMessageDialog(null, "Recommended " + recoString, "Your Recommendations!", 1); 
       }
       else if (ae.getActionCommand().equals("Prev"))
         {
@@ -292,7 +301,58 @@ class BERecommender implements ActionListener
         }
      }
 
-   /*****************/
+   private String getFulltimeFinalSubjects() throws Exception{
+	   
+	   String line = System.getProperty("line.separator");
+	   StringBuffer sb = new StringBuffer();
+	   sb.append(line);
+	   
+	   ArrayList<Elective> list = getFullTimeSubjects();
+	   for (Elective e: list){
+		   sb.append(e);
+		   sb.append(line);
+	   }
+	   
+	   return sb.toString();
+   }
+   private String getFinalSubjects() throws Exception{
+	
+	String line = System.getProperty("line.separator");
+	
+	StringBuffer sb = new StringBuffer();
+	sb.append(line);
+	
+	ArrayList<String> subjects = new ArrayList<String>();
+	
+	//Pretty string formatting
+	String one = getFONESubject().replace("(", "").replace(")", "");
+	String two = getFTWOSubject().replace("(", "").replace(")", "");
+	String three = getFTHREESubject().replace("(", "").replace(")", "");
+	String four = getFFOURSubject().replace("(", "").replace(")", "");
+	String five = getFFIVESubject().replace("(", "").replace(")", "");
+	String six = getFSIXSubject().replace("(", "").replace(")", "");
+	String seven = getFSEVENSubject().replace("(", "").replace(")", "");
+	String eight = getFEIGHTSubject().replace("(", "").replace(")", "");
+	
+	
+	subjects.add(one);
+	subjects.add(two);
+	subjects.add(three);
+	subjects.add(four);
+	subjects.add(five);
+	subjects.add(six);
+	subjects.add(seven);
+	subjects.add(eight);
+	
+	for (String s: subjects){
+		sb.append(s);
+		sb.append(line);
+	}
+	
+	return sb.toString();
+}
+
+/*****************/
    /* wrapLabelText */
    /*****************/  
    private void wrapLabelText( JLabel label, String text){
@@ -347,21 +407,117 @@ class BERecommender implements ActionListener
      }
    
    
-	public String getSubject() throws Exception{
+   public ArrayList<Elective> getFullTimeSubjects() throws Exception{
+	   PrimitiveValue pv, fv = null;
 
+	   ArrayList<String> funcs = new ArrayList<String>();
+	   ArrayList<Elective> electives = new ArrayList<Elective>();
+	   
+	   funcs.add("(getFONESubject)");
+	   funcs.add("(getFTWOSubject)");
+	   funcs.add("(getFTHREESubject)");
+	   funcs.add("(getFFOURSubject)");
+	   funcs.add("(getFFIVESubject)");
+	   funcs.add("(getFSIXSubject)");
+	   funcs.add("(getFSEVENSubject)");
+	   funcs.add("(getFEIGHTSubject)");
+	   
+	   for (String fun: funcs){
+		   Elective elective = new Elective();
+		   pv = clips.eval(fun);
+		   fv = pv.get(0);
+		   elective.setCode(fv.getFactSlot("code").toString());
+		   elective.setName(fv.getFactSlot("name").toString());
+		   elective.setStream(fv.getFactSlot("stream").toString());
+		   elective.setSetf(fv.getFactSlot("setf").toString());
+		   elective.setSetp(fv.getFactSlot("setp").toString());
+		   elective.setType(fv.getFactSlot("type").toString());
+		   elective.setPrg(fv.getFactSlot("prg").toString());
+		   elective.setMode(fv.getFactSlot("mode").toString());
+		   elective.setPreq(fv.getFactSlot("preq").toString());
+		   electives.add(elective);
+	   }
+	   
+	   
+	   return electives;   
+   }
+   
+	public String getFONESubject() throws Exception{
+		// needs improvement
 		String cname = null;
-
 		PrimitiveValue pv, fv = null;
-		String evalStr = "(getSubject)";
+		String evalStr = "(getFONESubject)";
+		pv = clips.eval(evalStr);
+		fv = pv.get(0);
+        cname = fv.getFactSlot("name").toString();
+        return cname;
+	}
+	public String getFTWOSubject() throws Exception{
+		String cname = null;
+		PrimitiveValue pv, fv = null;
+		String evalStr = "(getFTWOSubject)";
+		pv = clips.eval(evalStr);
+		fv = pv.get(0);
+        cname = fv.getFactSlot("name").toString();
+        return cname;
+	}
+	public String getFTHREESubject() throws Exception{
+		String cname = null;
+		PrimitiveValue pv, fv = null;
+		String evalStr = "(getFTHREESubject)";
+		pv = clips.eval(evalStr);
+		fv = pv.get(0);
+        cname = fv.getFactSlot("name").toString();
+        return cname;
+	}
+	public String getFFOURSubject() throws Exception{
+		String cname = null;
+		PrimitiveValue pv, fv = null;
+		String evalStr = "(getFFOURSubject)";
+		pv = clips.eval(evalStr);
+		fv = pv.get(0);
+        cname = fv.getFactSlot("name").toString();
+        return cname;
+	}
+	public String getFFIVESubject() throws Exception{
+		String cname = null;
+		PrimitiveValue pv, fv = null;
+		String evalStr = "(getFFIVESubject)";
 		pv = clips.eval(evalStr);
 		
 		fv = pv.get(0);
         cname = fv.getFactSlot("name").toString();
-        
+        return cname;
+	}
+	public String getFSIXSubject() throws Exception{
+		String cname = null;
+		PrimitiveValue pv, fv = null;
+		String evalStr = "(getFSIXSubject)";
+		pv = clips.eval(evalStr);
+		fv = pv.get(0);
+        cname = fv.getFactSlot("name").toString();
+        return cname;
+	}
+	public String getFSEVENSubject() throws Exception{
+		String cname = null;
+		PrimitiveValue pv, fv = null;
+		String evalStr = "(getFSEVENSubject)";
+		pv = clips.eval(evalStr);
+		fv = pv.get(0);
+        cname = fv.getFactSlot("name").toString();
+        return cname;
+	}
+	public String getFEIGHTSubject() throws Exception{
+		String cname = null;
+		PrimitiveValue pv, fv = null;
+		String evalStr = "(getFEIGHTSubject)";
+		pv = clips.eval(evalStr);
+		fv = pv.get(0);
+        cname = fv.getFactSlot("name").toString();
         return cname;
 	}
 
-   
+	
    public static void main(String args[])
      {  
       // Create the frame on the event dispatching thread.  

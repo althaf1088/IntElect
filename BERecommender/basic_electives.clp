@@ -789,10 +789,10 @@
 ;;;****************
 
 (defglobal
-	?*temp* = 0
-    ?*FONE* = 0.5
-    ?*FTWO* = 0.5
-    ?*FTHREE* = 0.5
+	
+    ?*FONE* = 0
+    ?*FTWO* = 0
+    ?*FTHREE* = 0
     ?*FFOUR* = 0
     ?*FFIVE* = 0
     ?*FSIX* = 0
@@ -894,8 +894,19 @@
 (defrule ke_special
 
 	(logical (branch KE))
+	(elective (code CBR) (cf ?cf1))
+	(elective (code BADM) (cf ?cf2))
+	(elective (code KM) (cf ?cf3))
+	(elective (code GA) (cf ?cf4))
+	(elective (code TM) (cf ?cf5))
 	=>
-	(assert (elective_wgoal (code BADM) (cf 0.9)))
+		;; Give weightage to all KE related subjects.
+		(assert (elective_wgoal (code CBR) (cf (* ?cf1 0.9))))
+		(assert (elective_wgoal (code BADM) (cf (* ?cf2 0.9))))
+		(assert (elective_wgoal (code KM) (cf (* ?cf3 0.9))))
+		(assert (elective_wgoal (code GA) (cf (* ?cf4 0.9))))
+		(assert (elective_wgoal (code TM) (cf (* ?cf5 0.9))))
+
 )
 
 (defrule determine_student_has_worked
@@ -906,13 +917,13 @@
 
    (assert (UI-state (display worked)
                      (relation-asserted worked)
-                     (response No)
-                     (valid-answers No Yes))))
+                     (response Yes)
+                     (valid-answers Yes No))))
    
 
 (defrule determine_student_experience
 
-   (logical (worked Yes))
+   (logical (or (worked Yes) (worked No)))
 
    =>
 
@@ -921,7 +932,229 @@
                      (response Medium)
                      (valid-answers High Medium Low))))
 
+
+;;;***************
+;;;* MANAGEMENT Q*
+;;;***************
+
+
+;; Management Experience
+
+(defrule determine_student_management_experience
+
+	(logical ( and (or (branch KE) (branch SE)) 
+	               (or (experience High) (experience Medium) (experience Low)) ))
+
+=>
+
+	(assert (UI-state (display management_exp)
+	(relation-asserted management_exp)
+	(response No)
+	(valid-answers Yes No)))
+
+)
+
+(defrule student_management_exp_weightage_yes 
+;; Subjects that will benefit from management experience
+;; Using only 0.6 because prior experience is not a huge factor
+
+	(logical (management_exp Yes))
+	
+	(elective (code ITSM) (cf ?cf1))
+	(elective (code BPM) (cf ?cf2)) 
+	(elective (code ASPM) (cf ?cf3))
+	(elective (code ITL) (cf ?cf4))
+	(elective (code KM) (cf ?cf5))
+	(elective (code MITOS) (cf ?cf6))
+
+	=>
+	
+	(assert (elective_wgoal (code ITSM) (cf (* ?cf1 0.6))))
+	(assert (elective_wgoal (code BPM) (cf (* ?cf2 0.6))))
+	(assert (elective_wgoal (code ASPM) (cf (* ?cf3 0.6))))
+	(assert (elective_wgoal (code ITL) (cf (* ?cf4 0.6))))
+	(assert (elective_wgoal (code KM) (cf (* ?cf5 0.6))))
+	(assert (elective_wgoal (code MITOS) (cf (* ?cf6 0.6))))
+)
+
+(defrule student_management_exp_weightage_no 
+;; Subjects that might be tough or not-so-relevant w/o mgmt exp
+
+	(logical (management_exp No))
+	
+	(elective (code ITSM) (cf ?cf1))
+	(elective (code ASPM) (cf ?cf2))
+	(elective (code MITOS) (cf ?cf3))
+
+=>
+
+	(assert (elective_wgoal (code ITSM) (cf (* ?cf1 -0.2))))
+	(assert (elective_wgoal (code ASPM) (cf (* ?cf2 -0.2))))
+	(assert (elective_wgoal (code MITOS) (cf (* ?cf3 -0.2))))
+)
+
+
+;; Management Interest
+
+(defrule determine_student_management_interest
+
+	(logical ( and (or (branch KE) (branch SE)) 
+	               (or (experience High) (experience Medium) (experience Low)) 
+	               (or (management_exp Yes) (management_exp No))))
+	
+	=>
+	
+	(assert (UI-state (display management_int)
+	(relation-asserted management_int)
+	(response No)
+	(valid-answers Yes No Maybe)))
+
+)
+
+(defrule student_management_int_weightage_yes ;; Relevant subjects if student is interested in management
+                                       
+(logical (management_int Yes))
+
+(elective (code ITSM) (cf ?cf1))
+(elective (code BPM) (cf ?cf2)) 
+(elective (code ASPM) (cf ?cf3))
+(elective (code ITL) (cf ?cf4))
+(elective (code KM) (cf ?cf5))
+(elective (code MITOS) (cf ?cf6))
+
+=>
+
+(assert (elective_wgoal (code ITSM) (cf (* ?cf1 0.8))))
+(assert (elective_wgoal (code BPM) (cf (* ?cf2 0.8))))
+(assert (elective_wgoal (code ASPM) (cf (* ?cf3 0.8))))
+(assert (elective_wgoal (code ITL) (cf (* ?cf4 0.8))))
+(assert (elective_wgoal (code KM) (cf (* ?cf5 0.8))))
+(assert (elective_wgoal (code MITOS) (cf (* ?cf6 0.8))))
+
+)
+
+(defrule student_management_int_weightage_no 
+;; Reducing weightage for mgmt subjects if not interested in mgmt
+
+	(logical (management_int No))
+	
+	(elective (code ITSM) (cf ?cf1))
+	(elective (code BPM) (cf ?cf2)) 
+	(elective (code ASPM) (cf ?cf3))
+	(elective (code ITL) (cf ?cf4))
+	(elective (code KM) (cf ?cf5))
+	(elective (code MITOS) (cf ?cf6))
+	
+	=>
+	
+	(assert (elective_wgoal (code ITSM) (cf (* ?cf1 -0.5))))
+	(assert (elective_wgoal (code BPM) (cf (* ?cf2 -0.5))))
+	(assert (elective_wgoal (code ASPM) (cf (* ?cf3 -0.5))))
+	(assert (elective_wgoal (code ITL) (cf (* ?cf4 -0.5))))
+	(assert (elective_wgoal (code KM) (cf (* ?cf5 -0.5))))
+	(assert (elective_wgoal (code MITOS) (cf (* ?cf6 -0.5))))
+
+)
+
+(defrule student_management_int_weightage_maybe 
+;; If student 'maybe' interested in management 
+;; we set cf for mgmt subjects as 0.4
+	(logical (management_int Maybe))
+	
+	(elective (code ITSM) (cf ?cf1))
+	(elective (code BPM) (cf ?cf2)) 
+	(elective (code ASPM) (cf ?cf3))
+	(elective (code ITL) (cf ?cf4))
+	(elective (code KM) (cf ?cf5))
+	(elective (code MITOS) (cf ?cf6))
+	
+	=>
+	
+	(assert (elective_wgoal (code ITSM) (cf (* ?cf1 0.4))))
+	(assert (elective_wgoal (code BPM) (cf (* ?cf2 0.4))))
+	(assert (elective_wgoal (code ASPM) (cf (* ?cf3 0.4))))
+	(assert (elective_wgoal (code ITL) (cf (* ?cf4 0.4))))
+	(assert (elective_wgoal (code KM) (cf (* ?cf5 0.4))))
+	(assert (elective_wgoal (code MITOS) (cf (* ?cf6 0.4))))
+
+)
                                           
+
+;; Project Management or Enterprise Management
+
+(defrule determine_student_management_project_enterprise
+
+	(logical ( and (or (branch KE) (branch SE)) 
+	               (or (experience High) (experience Medium) (experience Low)) 
+	               (or (management_exp Yes) (management_exp No))
+	               (or (management_int Yes) (management_int Maybe) (management_int No)))) ;; rule not applicable if mgmt_int = no
+
+=>
+
+	(assert (UI-state (display management_pm_ent)
+	(relation-asserted management_pm_ent)
+	(response PM)
+	(valid-answers PM EM Both)))
+
+)
+
+
+(defrule student_management_pm_ent_weightage_pm ;; If student is interested in PM 
+                                                ;; boost PM subjects by a 'probably' factor (0.6/Probably)
+                                       
+	(logical (management_pm_ent PM))
+	
+	(elective (code BPM) (cf ?cf1)) 
+	(elective (code ASPM) (cf ?cf2))
+	
+	=>
+	
+	(assert (elective_wgoal (code BPM) (cf (* ?cf1 0.6))))
+	(assert (elective_wgoal (code ASPM) (cf (* ?cf2 0.6))))
+
+)
+
+(defrule student_management_pm_ent_weightage_em ;; If student is interested in EM 
+                                                ;; boost EM subjects by a 'probably' factor (0.6/Probably)
+
+	(logical (management_pm_ent EM))
+	
+	(elective (code ITSM) (cf ?cf1))
+	(elective (code ITL) (cf ?cf2))
+	(elective (code KM) (cf ?cf3))
+	(elective (code MITOS) (cf ?cf4))
+	
+	=>
+	
+	(assert (elective_wgoal (code ITSM) (cf (* ?cf1 0.6))))
+	(assert (elective_wgoal (code ITL) (cf (* ?cf2 0.6))))
+	(assert (elective_wgoal (code KM) (cf (* ?cf3 0.6))))
+	(assert (elective_wgoal (code MITOS) (cf (* ?cf4 0.6))))
+
+)
+
+(defrule student_management_pm_ent_weightage_both ;; If student is interested in both PM and EM 
+                                                  ;; we set equal cf for all mgmt subjects (0.4/Maybe)
+	(logical (management_pm_ent Both))
+	
+	(elective (code ITSM) (cf ?cf1))
+	(elective (code BPM) (cf ?cf2)) 
+	(elective (code ASPM) (cf ?cf3))
+	(elective (code ITL) (cf ?cf4))
+	(elective (code KM) (cf ?cf5))
+	(elective (code MITOS) (cf ?cf6))
+	
+	=>
+	
+	(assert (elective_wgoal (code ITSM) (cf (* ?cf1 0.4))))
+	(assert (elective_wgoal (code BPM) (cf (* ?cf2 0.4))))
+	(assert (elective_wgoal (code ASPM) (cf (* ?cf3 0.4))))
+	(assert (elective_wgoal (code ITL) (cf (* ?cf4 0.4))))
+	(assert (elective_wgoal (code KM) (cf (* ?cf5 0.4))))
+	(assert (elective_wgoal (code MITOS) (cf (* ?cf6 0.4))))
+
+)
+
 ;;;*************************
 ;;;* GUI INTERACTION RULES *
 ;;;*************************
@@ -1085,12 +1318,75 @@
 
 (defrule display_recommendations
 
-   (logical (or (worked Yes)(worked No)))
+   (logical (or (management_pm_ent PM)(management_pm_ent EM)))
    
    =>
 
    (assert (UI-state (display recommendation)
                      (state final))))
+
+;;;**********************************
+;;;* FULL TIME EIGHT SET MAX VALEUS *
+;;;**********************************
+
+(defrule FONE_get_value
+	(elective_goal (code ?c) (setf ONE) (cf ?cf1))
+=>	
+    (if (> ?cf1 ?*FONE*)
+        then
+    (bind ?*FONE* ?cf1)        
+    )
+
+)
+
+(defrule FTWO_get_value
+	(elective_goal (code ?c) (setf TWO) (cf ?cf1))
+=>	
+    (if (> ?cf1 ?*FTWO*)
+        then
+    (bind ?*FTWO* ?cf1)        
+    )
+
+)
+
+(defrule FTHREE_get_value
+	(elective_goal (code ?c) (setf THREE) (cf ?cf1))
+=>	
+    (if (> ?cf1 ?*FTHREE*)
+        then
+    (bind ?*FTHREE* ?cf1)        
+    )
+
+)
+
+(defrule FFOUR_get_value
+	(elective_goal (code ?c) (setf FOUR) (cf ?cf1))
+=>	
+    (if (> ?cf1 ?*FFOUR*)
+        then
+    (bind ?*FFOUR* ?cf1)        
+    )
+
+)
+
+(defrule FFIVE_get_value
+	(elective_goal (code ?c) (setf FIVE) (cf ?cf1))
+=>	
+    (if (> ?cf1 ?*FFIVE*)
+        then
+    (bind ?*FFIVE* ?cf1)        
+    )
+    
+)
+
+(defrule FSIX_get_value
+	(elective_goal (code ?c) (setf SIX) (cf ?cf1))
+=>	
+    (if (> ?cf1 ?*FSIX*)
+        then
+    (bind ?*FSIX* ?cf1)        
+    )
+)
 
 
 (defrule FSEVEN_get_value
@@ -1103,8 +1399,61 @@
     ;;(printout t crlf "FSEVEN --> "?*FSEVEN* crlf)
 )
 
-(deffunction getSubject ()
+(defrule FEIGHT_get_value
+	(elective_goal (code ?c) (setf EIGHT) (cf ?cf1))
+=>	
+    (if (> ?cf1 ?*FEIGHT*)
+        then
+    (bind ?*FEIGHT* ?cf1)        
+    )
+)
+
+(deffunction getFONESubject ()
+  (bind ?facts (find-all-facts ((?f elective_goal))
+                               (and (eq ?f:setf ONE)
+                                    (= ?f:cf ?*FONE*))))
+)
+
+(deffunction getFTWOSubject ()
+  (bind ?facts (find-all-facts ((?f elective_goal))
+                               (and (eq ?f:setf TWO)
+                                    (= ?f:cf ?*FTWO*))))
+)
+
+(deffunction getFTHREESubject ()
+  (bind ?facts (find-all-facts ((?f elective_goal))
+                               (and (eq ?f:setf THREE)
+                                    (= ?f:cf ?*FTHREE*))))
+)
+
+(deffunction getFFOURSubject ()
+  (bind ?facts (find-all-facts ((?f elective_goal))
+                               (and (eq ?f:setf FOUR)
+                                    (= ?f:cf ?*FFOUR*))))
+)
+
+(deffunction getFFIVESubject ()
+  (bind ?facts (find-all-facts ((?f elective_goal))
+                               (and (eq ?f:setf FIVE)
+                                    (= ?f:cf ?*FFIVE*))))
+)
+
+(deffunction getFSIXSubject ()
+  (bind ?facts (find-all-facts ((?f elective_goal))
+                               (and (eq ?f:setf SIX)
+                                    (= ?f:cf ?*FSIX*))))
+)
+
+(deffunction getFSEVENSubject ()
   (bind ?facts (find-all-facts ((?f elective_goal))
                                (and (eq ?f:setf SEVEN)
                                     (= ?f:cf ?*FSEVEN*))))
 )
+
+(deffunction getFEIGHTSubject ()
+  (bind ?facts (find-all-facts ((?f elective_goal))
+                               (and (eq ?f:setf EIGHT)
+                                    (= ?f:cf ?*FEIGHT*))))
+)
+
+
