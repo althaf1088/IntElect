@@ -10,7 +10,15 @@ public class Elective {
 	private String prg;
 	private String mode;
 	private String preq;
+	private String cf;
 	
+	public String getCf() {
+		return cf;
+	}
+	public void setCf(String cf) {
+		float percentage = Float.parseFloat(cf) * 100;
+		this.cf = percentage + "%";
+	}
 	public String getCode() {
 		return code;
 	}
@@ -68,8 +76,8 @@ public class Elective {
 	@Override
 	public String toString() {
 		return String
-				.format("%-10s %-30s %-3s %-7s %-7s %-12s %-12s %10s %7s",
-						code, name, stream, setf, setp, type, prg, mode, preq);
+				.format("%-10s %-30s %-3s %-7s %-7s %-12s %-10s %-10s %-16s %-3s",
+						code, name, stream, setf, setp, type, prg, mode, preq, cf);
 	}
 	
 	

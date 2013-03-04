@@ -435,7 +435,9 @@ class BERecommender implements ActionListener
 		   elective.setPrg(fv.getFactSlot("prg").toString());
 		   elective.setMode(fv.getFactSlot("mode").toString());
 		   elective.setPreq(fv.getFactSlot("preq").toString());
+		   elective.setCf(fv.getFactSlot("cf").toString());
 		   electives.add(elective);
+		   
 	   }
 	   
 	   
