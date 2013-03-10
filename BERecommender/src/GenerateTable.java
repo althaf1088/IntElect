@@ -1,9 +1,16 @@
 import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.KeyEvent;
+import java.io.File;
+import java.io.IOException;
+import java.io.PrintWriter;
 import java.util.ArrayList;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.JTableHeader;
+import javax.swing.table.TableModel;
 
 class GenerateTable extends JFrame {
 
@@ -11,6 +18,10 @@ class GenerateTable extends JFrame {
 	private	JTable		table;
 	private	JScrollPane scrollPane;
 
+	private JMenuBar menubar;
+	private JMenu file;
+	private JMenuItem export;
+	
 	
 	public GenerateTable(ArrayList<Elective> electives){
 		
@@ -78,12 +89,67 @@ class GenerateTable extends JFrame {
 		JTableHeader header = table.getTableHeader();
 		header.setFont(new Font("Serif", Font.BOLD, 15));
 		
+		
+		/*=====================================*/
+	      /* Create the menus and menu items   */
+	      /*=====================================*/
+	      menubar = new JMenuBar();
+	      file = new JMenu("File");
+	      file.setMnemonic(KeyEvent.VK_F);
+	      
+	      export = new JMenuItem("Export");
+	      export.setMnemonic(KeyEvent.VK_E);
+	      export.setToolTipText("Export for spreedsheet application");
+	      export.addActionListener(new ActionListener() {
+	          public void actionPerformed(ActionEvent event) {
+	        	  JFileChooser jfc = new JFileChooser();
+	        	  jfc.setDialogTitle("Specify a file to save.");
+	        	  int userSelection = jfc.showSaveDialog(GenerateTable.this);
+	        	  
+	        	  if (userSelection == JFileChooser.APPROVE_OPTION){
+	        		  File fileToSave = jfc.getSelectedFile();
+	        		  System.out.println("Saving to " + fileToSave);
+	        		  toExcel(table, fileToSave);
+	        	  }
+	          }
+
+	      });
+	      file.add(export);
+	      menubar.add(file);
+	      setJMenuBar(menubar);
+		
 		setLocationRelativeTo(null);
 		
 		setVisible(true);
 		setResizable(false);
 	}
 	
+	private void toExcel(JTable table, File file){
+		try{
+	        TableModel model = table.getModel();
+	        PrintWriter excel = new PrintWriter(file);
+
+	        // Column names
+	        for(int i = 0; i < model.getColumnCount(); i++){
+	            excel.write(model.getColumnName(i) + "\t");
+	        }
+
+	        excel.write("\n");
+
+	        // Data sheet
+	        for(int i=0; i< model.getRowCount(); i++) {
+	            for(int j=0; j < model.getColumnCount(); j++) {
+	                excel.write(model.getValueAt(i,j).toString()+"\t");
+	            }
+	            excel.write("\n");
+	        }
+
+	        excel.close();
+
+	    }catch(IOException e){
+	    	System.out.println(e); 
+	    }
+	}
 
 	private class BETableCellRenderer extends DefaultTableCellRenderer{
 		public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column){
