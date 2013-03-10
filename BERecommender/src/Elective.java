@@ -75,9 +75,11 @@ public class Elective {
 	}
 	@Override
 	public String toString() {
+		
 		return String
 				.format("%-10s %-30s %-3s %-7s %-7s %-12s %-10s %-10s %-16s %-3s",
 						code, name, stream, setf, setp, type, prg, mode, preq, cf);
+		
 	}
 	
 	

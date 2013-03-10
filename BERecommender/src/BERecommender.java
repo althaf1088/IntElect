@@ -23,6 +23,14 @@ class BERecommender implements ActionListener
    ButtonGroup choicesButtons;
    ResourceBundle autoResources;
  
+   JMenuBar menubar;
+   ImageIcon icon;
+   JMenu file;
+   JMenu help;
+   JMenuItem exitMenuItem;
+   JMenuItem aboutMenuItem;
+   JMenuItem creditsMenuItem;
+   
    Environment clips;
    boolean isExecuting = false;
    Thread executionThread;
@@ -42,7 +50,7 @@ class BERecommender implements ActionListener
       
       JFrame frame = new JFrame(autoResources.getString("Title"));  
       frame.getContentPane().setLayout(new GridLayout(3,1));  
-      frame.setSize(500,300); //350x200     
+      frame.setSize(510,300); //350x200     
       frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);  
       frame.setResizable(false);
       
@@ -59,6 +67,8 @@ class BERecommender implements ActionListener
       /*===========================*/
      
       choicesPanel = new JPanel(); 
+      //choicesPanel.setLayout(new BoxLayout(frame.getContentPane(),BoxLayout.Y_AXIS));
+      
       choicesButtons = new ButtonGroup();
       
       /*===========================*/
@@ -85,6 +95,62 @@ class BERecommender implements ActionListener
       frame.getContentPane().add(choicesPanel); 
       frame.getContentPane().add(buttonPanel); 
 
+      /*=====================================*/
+      /* Create the menubar and menu items   */
+      /*=====================================*/
+      menubar = new JMenuBar();
+      //icon = new ImageIcon(getClass().getResource("exit.png"));
+      
+      //File Menu
+      file = new JMenu("File");
+      file.setMnemonic(KeyEvent.VK_F);
+      
+      exitMenuItem = new JMenuItem("Exit", icon);
+      exitMenuItem.setMnemonic(KeyEvent.VK_C);
+      exitMenuItem.setToolTipText("Exit application");
+      exitMenuItem.addActionListener(new ActionListener() {
+          public void actionPerformed(ActionEvent event) {
+        	  System.exit(0);
+          }
+
+      });
+      file.add(exitMenuItem);
+      
+      //Help Menu
+      help = new JMenu("Help");
+      help.setMnemonic(KeyEvent.VK_H);
+      
+      aboutMenuItem = new JMenuItem("About");
+      aboutMenuItem.setToolTipText("About this application");
+      aboutMenuItem.addActionListener(new ActionListener(){
+
+		public void actionPerformed(ActionEvent event) {
+			JOptionPane.showMessageDialog(null, "NUS ISS Basic Electives Recommendation System.", "About", 1);;
+		}
+    	  
+      });
+      
+
+      creditsMenuItem = new JMenuItem("Credits");
+      creditsMenuItem.setToolTipText("People involved in this project.");
+      creditsMenuItem.addActionListener(new ActionListener(){
+
+		public void actionPerformed(ActionEvent event) {
+			String line = System.getProperty("line.separator");
+			String names= "Abhimanyu Sarvagyam" + line + "Dinesh Charan R J" + line + "Karthikeyan K"
+					 + line +  "Nitin P Kumar" + line + "Mail us at:  getnpk[at]gmail[dot]com";
+			JOptionPane.showMessageDialog(null, names, "Credits", 1);
+		}
+    	  
+      });
+
+      help.add(aboutMenuItem);
+      help.add(creditsMenuItem);
+      
+      menubar.add(file);
+      menubar.add(help);
+      
+      
       /*========================*/
       /* Load the electives program. */
       /*========================*/
@@ -99,6 +165,7 @@ class BERecommender implements ActionListener
       /*====================*/
       /* Display the frame. */
       /*====================*/
+      frame.setJMenuBar(menubar);
       frame.setLocationRelativeTo(null);
       frame.setVisible(true);  
      }  
@@ -131,7 +198,7 @@ class BERecommender implements ActionListener
       if (fv.getFactSlot("state").toString().equals("final"))
         { 
          nextButton.setActionCommand("Final");
-         nextButton.setText("Show Recommendations");
+         nextButton.setText("Show My Recommendations");
          prevButton.setText("Try Again");
          prevButton.setActionCommand("Restart");
          prevButton.setVisible(true);
@@ -162,20 +229,28 @@ class BERecommender implements ActionListener
       //get current selected value for response
       String selected = fv.getFactSlot("response").toString();
      
+      Box vbox = Box.createVerticalBox();
+      
       //build up the radio buttons based on valid choices.      
       for (int i = 0; i < pv.size(); i++) 
         {
          PrimitiveValue bv = pv.get(i);
          JRadioButton rButton;
-                        
+         
          if (bv.toString().equals(selected))
-            { rButton = new JRadioButton(autoResources.getString(bv.toString()),true); }
+            { rButton = new JRadioButton(autoResources.getString(bv.toString()),true); 
+              vbox.add(rButton);
+            }
          else
-            { rButton = new JRadioButton(autoResources.getString(bv.toString()),false); }
+            { rButton = new JRadioButton(autoResources.getString(bv.toString()),false); 
+            vbox.add(rButton);
+            }
                      
          rButton.setActionCommand(bv.toString());
-         choicesPanel.add(rButton);
          choicesButtons.add(rButton);
+         
+         choicesPanel.add(vbox);
+         
         }
         
       choicesPanel.repaint();
@@ -285,14 +360,16 @@ class BERecommender implements ActionListener
          
         }
       else if (ae.getActionCommand().equals("Final")){
-    	  String recoString = getFulltimeFinalSubjects();
+    	  //String recoString = getFulltimeFinalSubjects();
     	  
     	  //Print DS all 
     	  ArrayList<Elective> list = getFullTimeSubjects();
     	  for (Elective e: list)
     		  System.out.println(e);
     	  
-    	  JOptionPane.showMessageDialog(null, "Recommended " + recoString, "Your Recommendations!", 1); 
+    	  //JOptionPane.showMessageDialog(null, "Recommended " + recoString, "Your Recommendations!", 1);
+    	  GenerateTable result = new GenerateTable(list);
+    	  
       }
       else if (ae.getActionCommand().equals("Prev"))
         {
@@ -315,6 +392,7 @@ class BERecommender implements ActionListener
 	   
 	   return sb.toString();
    }
+   
    private String getFinalSubjects() throws Exception{
 	
 	String line = System.getProperty("line.separator");
@@ -412,29 +490,44 @@ class BERecommender implements ActionListener
 
 	   ArrayList<String> funcs = new ArrayList<String>();
 	   ArrayList<Elective> electives = new ArrayList<Elective>();
-	   
-	   funcs.add("(getFONESubject)");
-	   funcs.add("(getFTWOSubject)");
-	   funcs.add("(getFTHREESubject)");
-	   funcs.add("(getFFOURSubject)");
-	   funcs.add("(getFFIVESubject)");
-	   funcs.add("(getFSIXSubject)");
-	   funcs.add("(getFSEVENSubject)");
-	   funcs.add("(getFEIGHTSubject)");
-	   
+	  
+	   String evalStr = "(find-all-facts ((?f student)) TRUE)";
+	      
+       String answer = clips.eval(evalStr).get(0).getFactSlot("fulltime").toString();
+
+       if (answer.equalsIgnoreCase("Yes")){
+		   funcs.add("(getFONESubject)");
+		   funcs.add("(getFTWOSubject)");
+		   funcs.add("(getFTHREESubject)");
+		   funcs.add("(getFFOURSubject)");
+		   funcs.add("(getFFIVESubject)");
+		   funcs.add("(getFSIXSubject)");
+		   funcs.add("(getFSEVENSubject)");
+		   funcs.add("(getFEIGHTSubject)");
+       }else{
+		   funcs.add("(getPONESubject)");
+		   //funcs.add("(getPTWOSubject)");
+		   funcs.add("(getPTHREESubject)");
+		   funcs.add("(getPFOURSubject)");
+		   funcs.add("(getPFIVESubject)");
+		   funcs.add("(getPSIXSubject)");
+		   funcs.add("(getPSEVENSubject)");
+		   funcs.add("(getPEIGHTSubject)");
+    	   
+       }
 	   for (String fun: funcs){
 		   Elective elective = new Elective();
 		   pv = clips.eval(fun);
 		   fv = pv.get(0);
 		   elective.setCode(fv.getFactSlot("code").toString());
-		   elective.setName(fv.getFactSlot("name").toString());
+		   elective.setName(fv.getFactSlot("name").toString().replace("(", "").replace(")", ""));
 		   elective.setStream(fv.getFactSlot("stream").toString());
 		   elective.setSetf(fv.getFactSlot("setf").toString());
 		   elective.setSetp(fv.getFactSlot("setp").toString());
 		   elective.setType(fv.getFactSlot("type").toString());
 		   elective.setPrg(fv.getFactSlot("prg").toString());
 		   elective.setMode(fv.getFactSlot("mode").toString());
-		   elective.setPreq(fv.getFactSlot("preq").toString());
+		   elective.setPreq(fv.getFactSlot("preq").toString().replace("(", "").replace(")", ""));
 		   elective.setCf(fv.getFactSlot("cf").toString());
 		   electives.add(elective);
 		   

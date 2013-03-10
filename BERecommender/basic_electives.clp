@@ -11,6 +11,10 @@
 ;;; * DEFTEMPLATES & DEFFACTS *
 ;;; ***************************
 
+(deftemplate student
+	(slot fulltime)
+)
+
 (deftemplate elective
     (slot code)       ;; ELECTIVE CODE
     (multislot name)  ;; NAME
@@ -803,6 +807,20 @@
     ?*PTWO* = 0
     ?*PTHREE* = 0
     ?*PFOUR* = 0
+    ?*PFIVE* = 0
+    ?*PSIX* = 0
+    ?*PSEVEN* = 0
+    ?*PEIGHT* = 0
+
+    ?*PONESUB* = "NONE"
+    ?*PTWOSUB* = "NONE"
+    ?*PTHREESUB* = "NONE"
+    ?*PFOURSUB* = "NONE"
+    ?*PFIVESUB* = "NONE"
+    ?*PSIXSUB* = "NONE"
+    ?*PSEVENSUB* = "NONE"
+    ?*PEIGHTSUB* = "NONE"
+
 )
 
 ;;;********************
@@ -851,6 +869,7 @@
 
 ;;;****************
 ;;;* STARTUP RULE *
+;;;* RULE G01     *
 ;;;****************
 
 (defrule system-banner ""
@@ -864,6 +883,7 @@
 
 ;;;***************
 ;;;* QUERY RULES *
+;;;* RULE G02    *
 ;;;***************
 
 (defrule determine_student_type 
@@ -875,8 +895,26 @@
    (assert (UI-state (display type)
                      (relation-asserted fulltime)
                      (response Yes)
-                     (valid-answers No Yes))))
-   
+                     (valid-answers Yes No))))
+
+
+(defrule student_fulltime
+	(logical (fulltime Yes))
+	=>
+	(assert (student (fulltime Yes)))
+)
+
+(defrule student_parttime
+	(logical (fulltime No))
+	=>
+	(assert (student (fulltime No)))
+)
+
+;;;****************
+;;;* BRANCH       *
+;;;* RULE G03     *
+;;;****************
+
 (defrule determine_student_branch 
 
    (logical (or (fulltime Yes) (fulltime No)))
@@ -909,6 +947,11 @@
 
 )
 
+;;;****************
+;;;* WORK         *
+;;;* RULE G04     *
+;;;****************
+
 (defrule determine_student_has_worked
 
    (logical (or (branch KE) (branch SE)))
@@ -919,11 +962,15 @@
                      (relation-asserted worked)
                      (response Yes)
                      (valid-answers Yes No))))
-   
+
+;;;****************
+;;;* WORK EXP     *
+;;;* RULE G05     *
+;;;****************   
 
 (defrule determine_student_experience
 
-   (logical (or (worked Yes) (worked No)))
+   (logical (worked Yes))
 
    =>
 
@@ -935,6 +982,7 @@
 
 ;;;***************
 ;;;* MANAGEMENT Q*
+;;;* RULE M01    *
 ;;;***************
 
 
@@ -953,6 +1001,8 @@
 	(valid-answers Yes No)))
 
 )
+
+;;;* RULE ME1    *
 
 (defrule student_management_exp_weightage_yes 
 ;; Subjects that will benefit from management experience
@@ -977,6 +1027,8 @@
 	(assert (elective_wgoal (code MITOS) (cf (* ?cf6 0.6))))
 )
 
+;;;* RULE ME2    *
+
 (defrule student_management_exp_weightage_no 
 ;; Subjects that might be tough or not-so-relevant w/o mgmt exp
 
@@ -993,14 +1045,14 @@
 	(assert (elective_wgoal (code MITOS) (cf (* ?cf3 -0.2))))
 )
 
-
+;;;* RULE M02    *
 ;; Management Interest
 
 (defrule determine_student_management_interest
 
-	(logical ( and (or (branch KE) (branch SE)) 
-	               (or (experience High) (experience Medium) (experience Low)) 
-	               (or (management_exp Yes) (management_exp No))))
+	(logical 
+	  (or  (or (management_exp Yes) (management_exp No))
+	                (worked No)))
 	
 	=>
 	
@@ -1010,6 +1062,8 @@
 	(valid-answers Yes No Maybe)))
 
 )
+
+;;;* RULE MI1    *
 
 (defrule student_management_int_weightage_yes ;; Relevant subjects if student is interested in management
                                        
@@ -1033,6 +1087,8 @@
 
 )
 
+;;;* RULE MI2    *
+
 (defrule student_management_int_weightage_no 
 ;; Reducing weightage for mgmt subjects if not interested in mgmt
 
@@ -1055,6 +1111,8 @@
 	(assert (elective_wgoal (code MITOS) (cf (* ?cf6 -0.5))))
 
 )
+
+;;;* RULE MI3    *
 
 (defrule student_management_int_weightage_maybe 
 ;; If student 'maybe' interested in management 
@@ -1081,13 +1139,11 @@
                                           
 
 ;; Project Management or Enterprise Management
+;;;* RULE MI4    *
 
 (defrule determine_student_management_project_enterprise
 
-	(logical ( and (or (branch KE) (branch SE)) 
-	               (or (experience High) (experience Medium) (experience Low)) 
-	               (or (management_exp Yes) (management_exp No))
-	               (or (management_int Yes) (management_int Maybe) (management_int No)))) ;; rule not applicable if mgmt_int = no
+	(logical (or (management_int Yes) (management_int Maybe))) ;; rule not applicable if mgmt_int = no
 
 =>
 
@@ -1098,6 +1154,7 @@
 
 )
 
+;;;* RULE MI5    *
 
 (defrule student_management_pm_ent_weightage_pm ;; If student is interested in PM 
                                                 ;; boost PM subjects by a 'probably' factor (0.6/Probably)
@@ -1113,6 +1170,8 @@
 	(assert (elective_wgoal (code ASPM) (cf (* ?cf2 0.6))))
 
 )
+
+;;;* RULE MI6    *
 
 (defrule student_management_pm_ent_weightage_em ;; If student is interested in EM 
                                                 ;; boost EM subjects by a 'probably' factor (0.6/Probably)
@@ -1132,6 +1191,8 @@
 	(assert (elective_wgoal (code MITOS) (cf (* ?cf4 0.6))))
 
 )
+
+;;;* RULE MI7    *
 
 (defrule student_management_pm_ent_weightage_both ;; If student is interested in both PM and EM 
                                                   ;; we set equal cf for all mgmt subjects (0.4/Maybe)
@@ -1153,6 +1214,1335 @@
 	(assert (elective_wgoal (code KM) (cf (* ?cf5 0.4))))
 	(assert (elective_wgoal (code MITOS) (cf (* ?cf6 0.4))))
 
+)
+
+
+;;;;;;;;;;;
+;;TECHNICAL
+;;;;;;;;;;;
+
+
+;; programming_exp
+;;;* RULE T01    *
+
+(defrule determine_student_programming_exp
+(
+logical
+(management_int No)
+)
+
+   =>
+
+   (assert (UI-state (display programming_exp)
+                     (relation-asserted programming_exp)
+                     (response Medium)
+                     (valid-answers High Medium Low)))
+)
+
+;;;* RULE TE1    *
+
+(
+defrule student_programming_exp_weightage_high
+	(logical (programming_exp High))
+
+    (elective (code MWAD)      (cf ?cf2))
+	(elective (code EJ)        (cf ?cf3))
+	(elective (code CC)        (cf ?cf4))
+    (elective (code ENETONE)   (cf ?cf5))
+    (elective (code ENETTWO)   (cf ?cf6))
+    (elective (code OODP)      (cf ?cf7))
+    (elective (code ASWS)      (cf ?cf8))
+
+	=>
+
+	(assert (elective_wgoal (code MWAD)      (cf (* ?cf2 0.8))))
+    (assert (elective_wgoal (code EJ)        (cf (* ?cf3 0.8))))
+	(assert (elective_wgoal (code CC)        (cf (* ?cf4 0.8))))
+    (assert (elective_wgoal (code ENETONE)   (cf (* ?cf5 0.8))))
+	(assert (elective_wgoal (code ENETTWO)   (cf (* ?cf6 0.8))))
+    (assert (elective_wgoal (code OODP)      (cf (* ?cf7 0.8))))
+    (assert (elective_wgoal (code ASWS)      (cf (* ?cf8 0.8))))
+   
+	
+)
+
+;;;* RULE TE2    *
+
+(
+defrule student_programming_exp_weightage_medium
+	(logical (programming_exp Medium))
+
+
+    (elective (code EI)     (cf ?cf3))
+    (elective (code SWP)    (cf ?cf6))
+    
+    =>
+	
+    (assert (elective_wgoal (code EI)     (cf (* ?cf3 0.8))))
+    (assert (elective_wgoal (code SWP)    (cf (* ?cf6 0.8))))
+
+)
+
+;;;* RULE TE3    *
+
+(
+defrule student_programming_exp_weightage_low
+	(logical (programming_exp Low))
+
+    (elective (code SMPI)   (cf ?cf5))
+	
+    =>
+
+    (assert (elective_wgoal (code SMPI)   (cf (* ?cf5 0.8))))
+
+
+)
+
+;; programming_int
+;; (slot programming_exp (type SYMBOL) (allowed-symbols LOW MEDIUM HIGH NONE) (default NONE))
+;; (slot programming_int (type SYMBOL) (allowed-symbols YES NO MAYBE NONE) (default NONE))
+
+;;;* RULE T02   *
+
+(
+defrule determine_student_programming_int
+(
+logical 
+(or (or (programming_exp High) (programming_exp Medium) (programming_exp Low))
+(or (management_pm_ent PM) (management_pm_ent EM) (management_pm_ent Both)))
+)
+
+   =>
+
+   (assert (UI-state (display learn_programming)
+                     (relation-asserted programming_int)
+                     (response No)
+                     (valid-answers Yes No Maybe)))
+)
+
+;;;* RULE TI1    *
+
+(
+defrule student_learn_programming_int_weightage_yes
+	(logical (programming_int Yes))
+	
+
+    (elective (code MWAD)      (cf ?cf2))
+	(elective (code EJ)        (cf ?cf3))
+	(elective (code CC)        (cf ?cf4))
+    (elective (code ENETONE)   (cf ?cf5))
+    (elective (code ENETTWO)   (cf ?cf6))
+    (elective (code OODP)      (cf ?cf7))
+
+	=>
+
+
+	(assert (elective_wgoal (code MWAD)   (cf (* ?cf2 0.8))))
+    (assert (elective_wgoal (code EJ)     (cf (* ?cf3 0.8))))
+	(assert (elective_wgoal (code CC)     (cf (* ?cf4 0.8))))
+    (assert (elective_wgoal (code ENETONE)(cf (* ?cf5 0.8))))
+	(assert (elective_wgoal (code ENETTWO)(cf (* ?cf6 0.8))))
+    (assert (elective_wgoal (code OODP)   (cf (* ?cf7 0.8))))
+
+
+)
+
+;;;* RULE TI2    *
+
+(
+defrule student_learn_programming_int_weightage_No
+	(logical (programming_int No))
+
+    (elective (code MWAD)      (cf ?cf2))
+	(elective (code EJ)        (cf ?cf3))
+	(elective (code CC)        (cf ?cf4))
+    (elective (code ENETONE)   (cf ?cf5))
+    (elective (code ENETTWO)   (cf ?cf6))
+    (elective (code OODP)      (cf ?cf7))
+
+	=>
+
+
+	(assert (elective_wgoal (code MWAD)   (cf (* ?cf2 -0.4))))
+    (assert (elective_wgoal (code EJ)     (cf (* ?cf3 -0.4))))
+	(assert (elective_wgoal (code CC)     (cf (* ?cf4 -0.4))))
+    (assert (elective_wgoal (code ENETONE)(cf (* ?cf5 -0.4))))
+	(assert (elective_wgoal (code ENETTWO)(cf (* ?cf6 -0.4))))
+    (assert (elective_wgoal (code OODP)   (cf (* ?cf7 0.2))))
+
+)
+
+;;;* RULE TI3    *
+
+(
+defrule student_learn_programming_int_weightage_maybe
+	(logical (programming_int Maybe))
+
+    (elective (code HCI)      (cf ?cf2))
+	(elective (code SWP)      (cf ?cf3))
+
+	=>
+
+	(assert (elective_wgoal (code HCI)     (cf (* ?cf2 0.1))))
+    (assert (elective_wgoal (code SWP)     (cf (* ?cf3 0.1))))
+)
+
+;; microsoft
+;;;* RULE PI1   *
+
+(
+defrule determine_student_microsoft
+(
+logical 
+	 (or (programming_int Yes) (programming_int Maybe))
+)
+
+   =>
+
+   (assert (UI-state (display microsoft)
+                     (relation-asserted microsoft)
+                     (response Medium)
+                     (valid-answers Yes No Maybe)))
+)
+
+;;;* RULE MS1   *
+
+(
+defrule student_microsoft_weightage_yes
+	(logical (microsoft Yes))
+
+	(elective (code ENETONE) (cf ?cf1))
+	(elective (code ENETTWO) (cf ?cf2))
+
+	=>
+
+	(assert (elective_wgoal (code ENETONE) (cf (* ?cf1 0.8))))
+	(assert (elective_wgoal (code ENETTWO) (cf (* ?cf2 0.8))))
+
+)
+
+;;;* RULE MS2   *
+
+(
+defrule student_microsoft_weightage_no
+	(logical (microsoft No))
+	
+	(elective (code ENETONE) (cf ?cf1))
+	(elective (code ENETTWO) (cf ?cf2))
+
+	=>
+
+	(assert (elective_wgoal (code ENETONE) (cf (* ?cf1 -0.4))))
+	(assert (elective_wgoal (code ENETTWO) (cf (* ?cf2 -0.4))))
+)
+
+;;;* RULE MS3   *
+
+(
+defrule student_microsoft_weightage_maybe
+	(logical (microsoft Maybe))
+
+	(elective (code ENETONE) (cf ?cf1))
+	(elective (code ENETTWO) (cf ?cf2))
+
+	=>
+
+	(assert (elective_wgoal (code ENETONE) (cf (* ?cf1 0.1))))
+	(assert (elective_wgoal (code ENETTWO) (cf (* ?cf2 0.1))))
+
+)
+
+;; opensource
+;;;* RULE PI2  *
+
+(
+defrule determine_student_opensource
+(
+logical 
+(and (or (microsoft Yes) (microsoft No) (microsoft Maybe))
+(or (programming_int Yes) (programming_int Maybe)))
+)
+
+   =>
+
+   (assert (UI-state (display opensource)
+                     (relation-asserted opensource)
+                     (response Medium)
+                     (valid-answers Yes No Maybe)))
+)
+
+;;;* RULE OS1  * 
+
+(
+defrule student_opensource_weightage_yes
+	(logical (opensource Yes))
+
+	(elective (code OSE) (cf ?cf1))
+
+	=>
+
+	(assert (elective_wgoal (code OSE) (cf (* ?cf1 0.8))))
+
+)
+
+;;;* RULE OS2  *
+
+(
+defrule student_opensource_weightage_no
+	(logical (opensource No))
+	
+    (elective (code OSE) (cf ?cf1))
+
+	=>
+
+	(assert (elective_wgoal (code OSE) (cf (* ?cf1 -0.4))))
+)
+
+;;;* RULE OS3  *
+
+(
+defrule student_opensource_weightage_maybe
+	(logical (opensource Maybe))
+
+    (elective (code OSE) (cf ?cf1))
+
+	=>
+
+	(assert (elective_wgoal (code OSE) (cf (* ?cf1 0.1))))
+
+)
+
+;; exp_java
+;;;* RULE PI3  *
+
+(
+defrule determine_student_exp_java
+(
+logical 
+(and (or (programming_int Yes)(programming_int Maybe))
+(or (opensource Yes)(opensource No) (opensource Maybe)))
+)
+   =>
+
+   (assert (UI-state (display exp_java)
+                     (relation-asserted exp_java)
+                     (response No)
+                     (valid-answers Yes No)))
+)
+
+;;;* RULE EJ1  *
+
+(
+defrule student_exp_java_weightage_yes
+	(logical (exp_java Yes))
+
+
+	(elective (code EJ)     (cf ?cf3))
+	(elective (code CC)     (cf ?cf4))
+
+	=>
+
+    (assert (elective_wgoal (code EJ)     (cf (* ?cf3 0.8))))
+	(assert (elective_wgoal (code CC)     (cf (* ?cf4 0.8))))
+)
+
+;;;* RULE EJ2  *
+
+(
+defrule student_exp_java_weightage_no
+	(logical (exp_java No))
+
+    (elective (code EJ)     (cf ?cf3))
+	(elective (code CC)     (cf ?cf4))
+    (elective (code EI)     (cf ?cf4))
+
+	=>
+
+    (assert (elective_wgoal (code EJ)     (cf (* ?cf3 -0.4))))
+	(assert (elective_wgoal (code CC)     (cf (* ?cf4 -0.4))))
+    (assert (elective_wgoal (code EI)     (cf (* ?cf4 0.2))))
+
+)
+
+;; frontend
+;;;* RULE PI4 *
+
+(
+defrule determine_student_frontend
+(
+logical 
+(and (or (programming_int Yes) (programming_int Maybe))
+(or (exp_java Yes) (exp_java No)))
+)
+   =>
+
+   (assert (UI-state (display frontend)
+                     (relation-asserted frontend)
+                     (response No)
+                     (valid-answers Yes No Maybe)))
+)
+
+;;;* RULE FE1 *
+
+(defrule student_frontend_weightage_yes
+	(logical (frontend Yes))
+	
+    (elective (code SWP) (cf ?cf1))
+	(elective (code HCI) (cf ?cf2))
+
+	=>
+
+	(assert (elective_wgoal (code SWP) (cf (* ?cf1 0.8))))
+	(assert (elective_wgoal (code HCI) (cf (* ?cf2 0.8))))
+)
+
+;;;* RULE FE2 *
+
+(defrule student_frontend_weightage_no
+	(logical (frontend No))
+	
+    (elective (code SWP) (cf ?cf1))
+	(elective (code HCI) (cf ?cf2))
+
+	=>
+
+	(assert (elective_wgoal (code SWP) (cf (* ?cf1 -0.4))))
+	(assert (elective_wgoal (code HCI) (cf (* ?cf2 -0.4))))
+
+)
+
+;;;* RULE FE3 *
+
+(
+defrule student_frontend_weightage_maybe
+	(logical (frontend Maybe))
+	
+    (elective (code SWP) (cf ?cf1))
+	(elective (code HCI) (cf ?cf2))
+
+	=>
+
+	(assert (elective_wgoal (code SWP) (cf (* ?cf1 0.2))))
+	(assert (elective_wgoal (code HCI) (cf (* ?cf2 0.1))))
+
+)
+
+;; ba
+;;;* RULE PI5 *
+
+(
+defrule determine_student_ba
+(
+logical 
+(and (or (programming_int Yes) (programming_int Maybe))
+(or (frontend Yes) (frontend No) (frontend Maybe)))
+)
+   =>
+
+   (assert (UI-state (display ba)
+                     (relation-asserted badm)
+                     (response No)
+                     (valid-answers Yes No Maybe)))
+)
+
+;;;* RULE BA1 *
+
+(
+defrule student_ba_weightage_yes 
+	(logical  (badm Yes))
+
+	(elective (code BADM) (cf ?cf1))
+    (elective (code TM) (cf ?cf2))
+    (elective (code KM) (cf ?cf3))
+
+	=>
+
+	(assert (elective_wgoal (code BADM) (cf (* ?cf1 0.8))))
+    (assert (elective_wgoal (code TM)   (cf (* ?cf2 0.8))))
+    (assert (elective_wgoal (code TM)   (cf (* ?cf3 0.8))))
+)
+)
+
+;;;* RULE BA2 *
+
+(
+defrule student_ba_weightage_no
+	(logical (badm No))
+
+	(elective (code BADM) (cf ?cf1))
+    (elective (code TM) (cf ?cf2))
+    (elective (code KM) (cf ?cf3))
+
+	=>
+
+	(assert (elective_wgoal (code BADM) (cf (* ?cf1 -0.4))))
+    (assert (elective_wgoal (code TM)   (cf (* ?cf2 -0.4))))
+    (assert (elective_wgoal (code TM)   (cf (* ?cf3 -0.4))))
+)
+
+;;;* RULE BA3 *
+
+(
+defrule student_ba_weightage_maybe
+	(logical (badm Maybe))
+
+	
+	(elective (code BADM) (cf ?cf1))
+    (elective (code TM) (cf ?cf2))
+    (elective (code KM) (cf ?cf3))
+
+	=>
+
+	(assert (elective_wgoal (code BADM) (cf (* ?cf1 0.2))))
+    (assert (elective_wgoal (code TM)   (cf (* ?cf2 0.2))))
+    (assert (elective_wgoal (code TM)   (cf (* ?cf3 0.2))))
+)
+
+)
+
+;; mobile
+;;;* RULE PI6 *
+
+(
+defrule determine_student_mobile
+(
+logical 
+(and (or (badm Yes) (badm No) (badm Maybe))
+(or (programming_int Yes) (programming_int Maybe)))
+)
+   =>
+
+   (assert (UI-state (display mobile)
+                     (relation-asserted mobile)
+                     (response No)
+                     (valid-answers Yes No Maybe)))
+)
+
+;;;* RULE MB1 *
+
+(
+defrule student_mobile_weightage_yes 
+	(logical  (mobile Yes))
+
+	(elective (code MWAD) (cf ?cf1))
+
+	=>
+
+	(assert (elective_wgoal (code MWAD) (cf (* ?cf1 0.8))))
+)
+
+;;;* RULE MB2 *
+
+(
+defrule student_mobile_weightage_no
+	(logical (mobile No))
+
+    (elective (code MWAD) (cf ?cf1))
+
+	=>
+
+	(assert (elective_wgoal (code MWAD) (cf (* ?cf1 -0.4))))
+)
+
+;;;* RULE MB3 *
+
+(
+defrule student_mobile_weightage_maybe
+	(logical (mobile Maybe))
+
+	(elective (code MWAD) (cf ?cf1))
+
+	=>
+
+	(assert (elective_wgoal (code MWAD) (cf (* ?cf1 0.2))))
+
+)
+
+;; KE Techniques
+;;;* RULE KS1 *
+
+(defrule determine_student_KE
+
+(logical (and (branch SE) 
+         (or (programming_int No) 
+         (or (mobile No)(mobile Yes)(mobile Maybe)))))
+               
+=>
+
+(assert (UI-state (display ke)
+(relation-asserted ke)
+(response No)
+(valid-answers Yes No Maybe)))
+
+)
+
+;;;* RULE KS2 *
+
+(defrule student_KE_weightage_yes ;; Subjects that will benefit from KE
+                                              ;; Using only 0.6 because prior experience is not a huge factor
+
+(logical (ke Yes))
+
+(elective (code GA) (cf ?cf1))
+(elective (code CBR) (cf ?cf2)) 
+(elective (code TM) (cf ?cf3))
+(elective (code BADM) (cf ?cf4))
+(elective (code KM) (cf ?cf5))
+
+=>
+
+(assert (elective_wgoal (code GA) (cf (* ?cf1 0.8))))
+(assert (elective_wgoal (code CBR) (cf (* ?cf2 0.8))))
+(assert (elective_wgoal (code TM) (cf (* ?cf3 0.8))))
+(assert (elective_wgoal (code BADM) (cf (* ?cf4 0.8))))
+(assert (elective_wgoal (code KM) (cf (* ?cf5 0.8))))
+)
+
+;;;* RULE KS3 *
+
+(defrule student_KE_weightage_no ;; Subjects that might be tough or not-so-relevant w/o mgmt exp
+
+(logical (ke No))
+
+(elective (code GA) (cf ?cf1))
+(elective (code CBR) (cf ?cf2)) 
+(elective (code TM) (cf ?cf3))
+(elective (code BADM) (cf ?cf4))
+(elective (code KM) (cf ?cf5))
+
+=>
+
+(assert (elective_wgoal (code GA) (cf (* ?cf1 -0.4))))
+(assert (elective_wgoal (code CBR) (cf (* ?cf2 -0.4))))
+(assert (elective_wgoal (code TM) (cf (* ?cf3 -0.4))))
+(assert (elective_wgoal (code BADM) (cf (* ?cf4 -0.4))))
+(assert (elective_wgoal (code KM) (cf (* ?cf5 -0.4))))
+)
+
+;;;* RULE KS4 *
+
+(defrule student_KE_weightage_maybe ;; Subjects that might be tough or not-so-relevant w/o mgmt exp
+
+(logical (ke Maybe))
+
+(elective (code GA) (cf ?cf1))
+(elective (code CBR) (cf ?cf2)) 
+(elective (code TM) (cf ?cf3))
+(elective (code BADM) (cf ?cf4))
+(elective (code KM) (cf ?cf5))
+
+=>
+
+(assert (elective_wgoal (code GA) (cf (* ?cf1 0.6))))
+(assert (elective_wgoal (code CBR) (cf (* ?cf2 0.6))))
+(assert (elective_wgoal (code TM) (cf (* ?cf3 0.6))))
+(assert (elective_wgoal (code BADM) (cf (* ?cf4 0.6))))
+(assert (elective_wgoal (code KM) (cf (* ?cf5 0.6))))
+)
+;;---
+;;GA
+;;;* RULE GA1 *
+;;---
+(defrule determine_student_SoftComputing_interest
+
+(logical (or (ke Yes) (ke Maybe) ))
+=>
+
+(assert (UI-state (display soft_computing)
+(relation-asserted soft_computing)
+(response No)
+(valid-answers Yes No)))
+
+)
+
+;;;* RULE GA2 *
+
+(defrule student_SoftComputing_weightage_yes 
+                                       
+(logical (soft_computing Yes))
+
+(elective (code GA) (cf ?cf1))
+
+
+=>
+
+(assert (elective_wgoal (code GA) (cf (* ?cf1 0.8))))
+)
+
+;;;* RULE GA3 *
+
+(defrule student_SoftComputing_weightage_no 
+
+(logical (soft_computing No))
+
+(elective (code GA) (cf ?cf1))
+
+
+=>
+
+(assert (elective_wgoal (code GA) (cf (* ?cf1 -0.5))))
+
+)
+;;----
+;;CBR
+;;;* RULE CB1 * 
+;;----
+(defrule student_trad_KE 
+                                                
+(logical 
+         (or(soft_computing No) (soft_computing Yes)))        
+
+
+=>
+
+(assert (UI-state (display traditional)
+(relation-asserted traditional)
+(response No)
+(valid-answers Yes No)))
+
+)
+
+;;;* RULE CB2 *
+
+(defrule student_TraditionalKE_weightage_yes 
+                                       
+(logical (traditional Yes))
+
+(elective (code CBR) (cf ?cf1))
+
+
+=>
+
+(assert (elective_wgoal (code CBR) (cf (* ?cf1 0.8))))
+)
+
+
+;;;* RULE CB3 *
+
+(defrule student_TraditionalKE_weightage_no 
+
+(logical (traditional No))
+
+(elective (code CBR) (cf ?cf1))
+
+
+=>
+
+(assert (elective_wgoal (code CBR) (cf (* ?cf1 -0.5))))
+
+)
+;;----------
+;;BADM & KM
+;;* RULE BA1 *
+;;----------
+(defrule student_DA_KE 
+                                                
+(logical 
+         (or (traditional No)(traditional Yes)))      
+
+
+=>
+
+(assert (UI-state (display data_analysis)
+(relation-asserted data_analysis)
+(response No)
+(valid-answers Yes No)))
+
+)
+
+;;;* RULE BA2 *
+
+(defrule student_DA_KE_weightage_yes 
+                                       
+(logical (data_analysis Yes))
+
+(elective (code BADM) (cf ?cf1))
+(elective (code KM) (cf ?cf2))
+
+=>
+
+(assert (elective_wgoal (code BADM) (cf (* ?cf1 0.8))))
+(assert (elective_wgoal (code KM) (cf (* ?cf2 0.8))))
+)
+
+;;;* RULE BA3 *
+
+(defrule student_DA_KE_weightage_no 
+
+(logical (data_analysis No))
+
+(elective (code BADM) (cf ?cf1))
+(elective (code KM) (cf ?cf2))
+
+=>
+
+(assert (elective_wgoal (code BADM) (cf (* ?cf1 -0.5))))
+(assert (elective_wgoal (code KM) (cf (* ?cf2 -0.5))))
+
+)
+;;---
+;;TM
+;;;* RULE TM1 *
+;;---
+(defrule student_search_KE 
+                                                
+(logical 
+         (or(data_analysis No)(data_analysis Yes)))        
+
+
+=>
+
+(assert (UI-state (display search)
+(relation-asserted search)
+(response No)
+(valid-answers Yes No)))
+
+)
+
+
+;;;* RULE TM2 *
+
+(defrule student_search_KE_weightage_yes 
+                                       
+(logical (search Yes))
+
+(elective (code TM) (cf ?cf1))
+
+=>
+
+(assert (elective_wgoal (code TM) (cf (* ?cf1 0.8))))
+
+)
+
+
+;;;* RULE TM3 *
+
+(defrule student_search_KE_weightage_no 
+
+(logical (search No))
+
+(elective (code TM) (cf ?cf1))
+
+
+=>
+
+(assert (elective_wgoal (code TM) (cf (* ?cf1 -0.5))))
+
+
+)
+
+;; Research and Innovation
+;;************************
+;; Are you interested in pursuing new ideas? 
+;; Yes => Increase for SI and RAIT + next question
+;; No => Negative for SI and RAIT
+
+;; Are you interested in academic research? 
+;; Yes => Service Innovation
+;; No => RAITONE & RAITTWO
+;;************************
+
+;; Mode (e-learning/e-learning support/either/neither)
+;;************************
+;; Would you like to take up a module supported by e-learning or completely administered by e-learning?
+;; Support => MITOS 
+;; Complete => ISS
+;; Either/OK with both => Increase for both
+;; Neither => Negative for both
+;;************************
+
+;; Research and Innovation
+;;;* RULE RI1 *
+
+(defrule determine_student_ideator ;; question can be whether you have new tech or biz ideas
+                                   ;; instead of ideator because everyone will say yes for ideator
+
+
+
+(logical (or (or (branch KE) (branch SE))
+   		 (or (search No) (search Yes))
+   				 (programming_int No)
+   				 (ke No)))
+=>
+
+(assert (UI-state (display ideator)
+(relation-asserted ideator)
+(response No)
+(valid-answers Yes No)))
+
+)
+
+;;;* RULE RI2 *
+
+(defrule student_ideator_weightage_yes ;; Relevant subjects if student is an ideator
+                                       
+(logical (ideator Yes))
+
+(elective (code SI) (cf ?cf1))
+(elective (code RAITONE) (cf ?cf2)) 
+(elective (code RAITTWO) (cf ?cf3))
+
+=>
+
+(assert (elective_wgoal (code SI) (cf (* ?cf1 0.8))))
+(assert (elective_wgoal (code RAITONE) (cf (* ?cf2 0.8))))
+(assert (elective_wgoal (code RAITTWO) (cf (* ?cf3 0.8))))
+
+)
+
+;;;* RULE RI3 *
+
+(defrule student_ideator_weightage_no ;; Negative weightage for research and innovation if not ideator 
+
+(logical (ideator No))
+
+(elective (code SI) (cf ?cf1))
+(elective (code RAITONE) (cf ?cf2)) 
+(elective (code RAITTWO) (cf ?cf3))
+
+=>
+
+(assert (elective_wgoal (code SI) (cf (* ?cf1 -0.8))))
+(assert (elective_wgoal (code RAITONE) (cf (* ?cf2 -0.8))))
+(assert (elective_wgoal (code RAITTWO) (cf (* ?cf3 -0.8))))
+)
+
+;; Academic Research
+;;;* RULE AR1 *
+
+(defrule determine_student_acad_res
+
+(logical (ideator Yes))
+
+=>
+
+(assert (UI-state (display acad_res)
+(relation-asserted acad_res)
+(response No)
+(valid-answers Yes No)))
+
+)
+
+;;;* RULE AR2 *
+
+(defrule student_acad_res_weightage_yes ;; Boost research heavily if ideator 
+                                        ;; and interested in Academic Research
+                                       
+(logical (acad_res Yes))
+
+(elective (code RAITONE) (cf ?cf1)) 
+(elective (code RAITTWO) (cf ?cf2))
+
+=>
+
+(assert (elective_wgoal (code RAITONE) (cf (* ?cf1 1.0))))
+(assert (elective_wgoal (code RAITTWO) (cf (* ?cf2 1.0))))
+
+)
+
+;;;* RULE AR3 *
+
+(defrule student_acad_res_weightage_no ;; Negative weightage for RAIT and positive for SI 
+                                       ;; if ideator but not interested in Academic Research
+
+(logical (acad_res No))
+
+(elective (code SI) (cf ?cf1))
+(elective (code RAITONE) (cf ?cf2)) 
+(elective (code RAITTWO) (cf ?cf3))
+
+=>
+
+(assert (elective_wgoal (code SI) (cf (* ?cf1 0.8))))
+(assert (elective_wgoal (code RAITONE) (cf (* ?cf2 -0.6))))
+(assert (elective_wgoal (code RAITTWO) (cf (* ?cf3 -0.6))))
+)
+
+
+;; Mode - e-learning
+;;;* RULE EL1 *
+
+(defrule determine_student_online_courses
+
+
+(logical 
+(or (ideator No)
+(or (acad_res Yes) (acad_res No))))
+
+=>
+
+(assert (UI-state (display online_courses)
+(relation-asserted online_courses)
+(response Neither)
+(valid-answers Full Support Both Neither)))
+
+)
+
+;;;* RULE EL2 *
+
+(defrule student_online_courses_weightage_full ;; Fully administered by e-learning
+                                       
+(logical (online_courses Full))
+
+(elective (code ISS) (cf ?cf1)) 
+
+=>
+
+(assert (elective_wgoal (code ISS) (cf (* ?cf1 1.0))))
+
+
+)
+
+;;;* RULE EL3 *
+
+(defrule student_online_courses_weightage_support ;; Supported by e-learning
+
+(logical (online_courses Support))
+
+(elective (code MITOS) (cf ?cf1)) 
+
+=>
+
+(assert (elective_wgoal (code MITOS) (cf (* ?cf1 1.0))))
+)
+
+;;;* RULE EL4 *
+
+(defrule student_online_courses_weightage_both ;; Both/either is fine
+
+(logical (online_courses Both))
+
+(elective (code MITOS) (cf ?cf1))
+(elective (code ISS) (cf ?cf2))
+
+=>
+
+(assert (elective_wgoal (code MITOS) (cf (* ?cf1 0.8))))
+(assert (elective_wgoal (code ISS) (cf (* ?cf2 0.8))))
+
+)
+
+;;;* RULE EL5 *
+
+(defrule student_online_courses_weightage_neither ;; Not interested in any kind of e-learning
+
+(logical (online_courses neither))
+
+(elective (code MITOS) (cf ?cf1))
+(elective (code ISS) (cf ?cf2))
+
+=>
+
+(assert (elective_wgoal (code MITOS) (cf (* ?cf1 0.8))))
+(assert (elective_wgoal (code ISS) (cf (* ?cf2 0.8))))
+
+)
+
+;;;;;;;;;;;
+;;INFRASTRUCTURE/BA
+;;;;;;;;;;;
+
+;; INFRASTRUCTURE
+
+;; infrastructure=Are you interested in working on applied IT infrastructure?
+;;;* RULE IB1 *
+
+(defrule determine_student_infrastructure
+(
+logical 
+(or 
+(or (branch KE) (branch SE))
+(or (online_courses Full) (online_courses Support) (online_courses Both) (online_courses Neither)))
+)
+
+   =>
+
+   (assert (UI-state (display infrastructure)
+                     (relation-asserted infrastructure)
+                     (response No)
+                     (valid-answers Yes No Maybe)))
+)
+
+;;;* RULE IB2 *
+
+(
+defrule student_infrastructure_weightage_yes
+	(logical (infrastructure Yes))
+
+    (elective (code CC)       (cf ?cf2))
+    (elective (code ISS)      (cf ?cf3))
+	(elective (code OSE)      (cf ?cf4))
+    
+	
+    =>
+    
+    (assert (elective_wgoal (code CC)       (cf (* ?cf2 0.8))))
+	(assert (elective_wgoal (code ISS)      (cf (* ?cf3 0.6))))
+    (assert (elective_wgoal (code OSE)      (cf (* ?cf4 0.4))))
+    
+)
+
+;;;* RULE IB2 *
+
+(
+defrule student_infrastructure_weightage_maybe
+	(logical (infrastructure Maybe))
+
+    (elective (code CC)       (cf ?cf2))
+    (elective (code ISS)      (cf ?cf3))
+	(elective (code OSE)      (cf ?cf4))
+    
+    =>
+    
+    (assert (elective_wgoal (code CC)       (cf (* ?cf2 0.6))))
+	(assert (elective_wgoal (code ISS)      (cf (* ?cf3 0.2))))
+    (assert (elective_wgoal (code OSE)      (cf (* ?cf4 0.2))))
+
+)
+
+;;;* RULE IB3 *
+
+(
+defrule student_infrastructure_weightage_no
+	(logical (infrastructure No))
+
+    (elective (code CC)       (cf ?cf2))
+    (elective (code ISS)      (cf ?cf3))
+	(elective (code OSE)      (cf ?cf4))
+    
+    =>
+    
+    (assert (elective_wgoal (code CC)       (cf (* ?cf2 -0.4))))
+	(assert (elective_wgoal (code ISS)      (cf (* ?cf3 -0.2))))
+    (assert (elective_wgoal (code OSE)      (cf (* ?cf4 -0.2))))
+
+)
+
+;; applied_opensource=Are you interested in implementing and maintaining open source technology?
+;;;* RULE AO1 *
+
+(defrule determine_student_applied_opensource
+(
+logical 
+(or (infrastructure No) (infrastructure Yes) (infrastructure Maybe))
+)
+
+   =>
+
+   (assert (UI-state (display applied_opensource)
+                     (relation-asserted applied_opensource)
+                     (response No)
+                     (valid-answers Yes No Maybe)))
+)
+
+;;;* RULE AO2 *
+
+(
+defrule student_applied_opensource_weightage_yes
+	(logical (infrastructure Yes))
+
+	(elective (code OSE)      (cf ?cf4))
+    
+    =>
+
+    (assert (elective_wgoal (code OSE)      (cf (* ?cf4 0.9))))
+    
+)
+
+;;;* RULE AO3 *
+
+(
+defrule student_applied_opensource_weightage_no
+	(logical (infrastructure No))
+
+	(elective (code OSE)      (cf ?cf4))
+    
+    =>
+
+    (assert (elective_wgoal (code OSE)      (cf (* ?cf4 -0.4))))
+    
+
+)
+
+;;;* RULE AO4 *
+
+(
+defrule student_applied_opensource_weightage_maybe
+	(logical (infrastructure Maybe))
+
+	(elective (code OSE)      (cf ?cf4))
+    
+    =>
+
+    (assert (elective_wgoal (code OSE)      (cf (* ?cf4 0.2))))
+)
+
+
+;; BA
+
+;; process_imp_reengg=Would you be interesetd in Process improvement and reengineering?
+;;;* RULE PR1 *
+
+(defrule determine_student_process_imp_reengg
+(
+logical 
+(or (applied_opensource No) (applied_opensource Yes) (applied_opensource Maybe))
+)
+
+   =>
+
+   (assert (UI-state (display process_imp_reengg)
+                     (relation-asserted process_imp_reengg)
+                     (response No)
+                     (valid-answers Yes No Maybe)))
+)
+
+;;;* RULE PR2 *
+
+(
+defrule student_process_imp_reengg_weightage_yes
+	(logical (process_imp_reengg Yes))
+
+	(elective (code BPM)      (cf ?cf4))
+    (elective (code SWRE)     (cf ?cf5))
+    (elective (code ASPM)     (cf ?cf6))
+    
+    =>
+
+    (assert (elective_wgoal (code BPM)      (cf (* ?cf4 0.8))))
+    (assert (elective_wgoal (code SWRE)     (cf (* ?cf5 0.8))))
+    (assert (elective_wgoal (code ASPM)     (cf (* ?cf6 0.6))))
+)
+
+;;;* RULE PR3 *
+
+(
+defrule student_process_imp_reengg_weightage_maybe
+	(logical (process_imp_reengg Maybe))
+
+	(elective (code BPM)      (cf ?cf4))
+    (elective (code SWRE)     (cf ?cf5))
+    
+    =>
+
+    (assert (elective_wgoal (code BPM)      (cf (* ?cf4 0.6))))
+    (assert (elective_wgoal (code SWRE)     (cf (* ?cf5 0.6))))
+)
+
+;;;* RULE PR4 *
+
+(
+defrule student_process_imp_reengg_weightage_no
+	(logical (process_imp_reengg No))
+
+	(elective (code BPM)      (cf ?cf4))
+    (elective (code SWRE)     (cf ?cf5))
+    
+    =>
+
+    (assert (elective_wgoal (code BPM)      (cf (* ?cf4 -0.4))))
+    (assert (elective_wgoal (code SWRE)     (cf (* ?cf5 -0.4))))
+)
+
+;; elicitation_and_analytics=Would you like to learn elicitation and analytics?
+;;;* RULE EA1 *
+
+(defrule determine_student_elicitation_and_analytics
+(logical 
+(or (process_imp_reengg No) (process_imp_reengg Yes) (process_imp_reengg Maybe))
+)
+
+   =>
+
+   (assert (UI-state (display elicitation_and_analytics)
+                     (relation-asserted elicitation_and_analytics)
+                     (response No)
+                     (valid-answers Yes No)))
+)
+
+;;;* RULE EA2 *
+
+(
+defrule student_elicitation_and_analytics_weightage_yes
+	(logical (elicitation_and_analytics Yes))
+
+    (elective (code SWRE)     (cf ?cf5))
+
+    =>
+
+    (assert (elective_wgoal (code SWRE)     (cf (* ?cf5 0.9))))
+
+)
+
+;;;* RULE EA3 *
+
+(
+defrule student_elicitation_and_analytics_weightage_no
+	(logical (elicitation_and_analytics No))
+
+    (elective (code SWRE)     (cf ?cf5))
+
+    =>
+
+    (assert (elective_wgoal (code SWRE)     (cf (* ?cf5 -0.4))))
+)
+
+
+;; product_development=Are you interested in product development?
+;;;* RULE PD1 *
+
+(defrule determine_student_product_development
+(
+logical 
+(or (elicitation_and_analytics No) (elicitation_and_analytics Yes))
+)
+
+   =>
+
+   (assert (UI-state (display product_development)
+                     (relation-asserted product_development)
+                     (response No)
+                     (valid-answers Yes No Maybe)))
+)
+
+;;;* RULE PD2 *
+
+(
+defrule student_product_development_weightage_yes
+	(logical (product_development Yes))
+
+    (elective (code SWP)     (cf ?cf5))
+    (elective (code HCI)     (cf ?cf6))
+    =>
+
+    (assert (elective_wgoal (code SWP)     (cf (* ?cf5 0.9))))
+    (assert (elective_wgoal (code HCI)     (cf (* ?cf6 0.9))))
+)
+
+;;;* RULE PD3 *
+
+(
+defrule student_product_development_weightage_maybe
+	(logical (product_development Maybe))
+
+    (elective (code SWP)     (cf ?cf5))
+
+    =>
+
+    (assert (elective_wgoal (code SWP)     (cf (* ?cf5 0.2))))
+)
+
+;;;* RULE PD4 *
+
+(
+defrule student_product_development_weightage_no
+	(logical (product_development No))
+
+    (elective (code SWP)     (cf ?cf5))
+    =>
+
+    (assert (elective_wgoal (code SWP)     (cf (* ?cf5 0.6))))
+)
 )
 
 ;;;*************************
@@ -1318,8 +2708,9 @@
 
 (defrule display_recommendations
 
-   (logical (or (management_pm_ent PM)(management_pm_ent EM)))
-   
+   (logical (or (product_development Yes) (product_development No) (product_development Maybe)
+   		    )
+    )
    =>
 
    (assert (UI-state (display recommendation)
@@ -1457,3 +2848,194 @@
 )
 
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;; PART TIME EIGHT SET MAX VALUES;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;; SET ONE
+
+(defrule PONE_get_value
+	(elective_goal (code ?c) (setp ONE) (cf ?cf1))
+=>	
+    (if (> ?cf1 ?*PONE*)
+    then
+	    (bind ?*PONE* ?cf1)
+	    (bind ?*PONESUB* ?c)        
+    )
+)
+
+(defrule PTWO_get_value
+	(elective_goal (code ?c) (setp ONE) (cf ?cf1))
+	(test (neq ?c ?*PONESUB*))
+
+=>	 
+	(if (= (str-compare ?c ?*PONESUB*) 0)
+	then
+		;;do nothing
+		
+	else 
+		(if (> ?cf1 ?*PTWO*)
+        then
+		    (bind ?*PTWO* ?cf1)
+		    (bind ?*PTWOSUB* ?c)
+		    
+		    (printout t crlf "PARTTIME SET ONE SUB ONE  " ?*PONESUB*)
+			(printout t crlf "PARTTIME SET ONE SUB TWO  " ?*PTWOSUB*)        
+    	)
+	)    
+)
+
+;; SET TWO
+
+(defrule PTHREE_get_value
+	(elective_goal (code ?c) (setp TWO) (cf ?cf1))
+=>	
+    (if (> ?cf1 ?*PTHREE*)
+    then
+	    (bind ?*PTHREE* ?cf1)
+	    (bind ?*PTHREESUB* ?c)        
+    )
+)
+
+(defrule PFOUR_get_value
+	(elective_goal (code ?c) (setp TWO) (cf ?cf1))
+	(test (neq ?c ?*PTHREESUB*))
+
+=>	 
+	(if (= (str-compare ?c ?*PTHREESUB*) 0)
+	then
+		;;do nothing
+		
+	else 
+		(if (> ?cf1 ?*PTWO*)
+        then
+		    (bind ?*PFOUR* ?cf1)
+		    (bind ?*PFOURSUB* ?c)		    
+		    (printout t crlf "PARTTIME SET TWO SUB ONE  " ?*PTHREESUB*)
+			(printout t crlf "PARTTIME SET TWO SUB TWO  " ?*PFOURSUB*)        
+    	)
+	)    
+)
+
+;; SET THREE
+
+(defrule PFIVE_get_value
+	(elective_goal (code ?c) (setp THREE) (cf ?cf1))
+=>	
+    (if (> ?cf1 ?*PFIVE*)
+    then
+	    (bind ?*PFIVE* ?cf1)
+	    (bind ?*PFIVESUB* ?c)        
+    )
+)
+
+(defrule PSIX_get_value
+	(elective_goal (code ?c) (setp THREE) (cf ?cf1))
+	(test (neq ?c ?*PFIVESUB*))
+
+=>	 
+	(if (= (str-compare ?c ?*PFIVESUB*) 0)
+	then
+		;;do nothing
+		
+	else 
+		(if (> ?cf1 ?*PSIX*)
+        then
+		    (bind ?*PSIX* ?cf1)
+		    (bind ?*PSIXSUB* ?c)		    
+		    (printout t crlf "PARTTIME SET THREE SUB ONE  " ?*PFIVESUB*)
+			(printout t crlf "PARTTIME SET THREE SUB TWO  " ?*PSIXSUB*)        
+    	)
+	)    
+)
+
+;; SET FOUR
+
+(defrule PSEVEN_get_value
+	(elective_goal (code ?c) (setp FOUR) (cf ?cf1))
+=>	
+    (if (> ?cf1 ?*PSEVEN*)
+    then
+	    (bind ?*PSEVEN* ?cf1)
+	    (bind ?*PSEVENSUB* ?c)        
+    )
+)
+
+(defrule PEIGHT_get_value
+	(elective_goal (code ?c) (setp FOUR) (cf ?cf1))
+	(test (neq ?c ?*PSEVENSUB*))
+
+=>	 
+	(if (= (str-compare ?c ?*PSEVENSUB*) 0)
+	then
+		;;do nothing
+		
+	else 
+		(if (> ?cf1 ?*PEIGHT*)
+        then
+		    (bind ?*PEIGHT* ?cf1)
+		    (bind ?*PEIGHTSUB* ?c)		    
+		    (printout t crlf "PARTTIME SET FOUR SUB ONE  " ?*PEIGHTSUB*)
+			(printout t crlf "PARTTIME SET FOUR SUB TWO  " ?*PEIGHTSUB*)        
+    	)
+	)    
+)
+
+;; get subject selections for part-time students.
+(deffunction getPONESubject ()
+  (bind ?facts (find-all-facts ((?f elective_goal))
+                               (and (eq ?f:setp ONE)
+                               		(eq ?f:code ?*PONESUB*)
+                                    (= ?f:cf ?*PONE*))))
+)
+
+(deffunction getPTWOSubject ()
+  (bind ?facts (find-all-facts ((?f elective_goal))
+                               (and (eq ?f:setp ONE)
+                               		(eq ?f:code ?*PTWOSUB*)
+                                    (= ?f:cf ?*PTWO*))))
+)
+
+
+(deffunction getPTHREESubject ()
+  (bind ?facts (find-all-facts ((?f elective_goal))
+                               (and (eq ?f:setp TWO)
+                               		(eq ?f:code ?*PTHREESUB*)
+                                    (= ?f:cf ?*PTHREE*))))
+)
+
+(deffunction getPFOURSubject ()
+  (bind ?facts (find-all-facts ((?f elective_goal))
+                               (and (eq ?f:setp TWO)
+                               		(eq ?f:code ?*PFOURSUB*)
+                                    (= ?f:cf ?*PFOUR*))))
+)
+
+
+(deffunction getPFIVESubject ()
+  (bind ?facts (find-all-facts ((?f elective_goal))
+                               (and (eq ?f:setp THREE)
+                               		(eq ?f:code ?*PFIVESUB*)
+                                    (= ?f:cf ?*PFIVE*))))
+)
+
+(deffunction getPSIXSubject ()
+  (bind ?facts (find-all-facts ((?f elective_goal))
+                               (and (eq ?f:setp THREE)
+                               		(eq ?f:code ?*PSIXSUB*)
+                                    (= ?f:cf ?*PSIX*))))
+)
+
+(deffunction getPSEVENSubject ()
+  (bind ?facts (find-all-facts ((?f elective_goal))
+                               (and (eq ?f:setp FOUR)
+                               		(eq ?f:code ?*PSEVENSUB*)
+                                    (= ?f:cf ?*PSEVEN*))))
+)
+
+(deffunction getPEIGHTSubject ()
+  (bind ?facts (find-all-facts ((?f elective_goal))
+                               (and (eq ?f:setp FOUR)
+                               		(eq ?f:code ?*PEIGHTSUB*)
+                                    (= ?f:cf ?*PEIGHT*))))
+)
