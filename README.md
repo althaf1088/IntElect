@@ -1,10 +1,10 @@
 ##########################################################
-#InElect v0.1                   					               #
+#InElect v0.1                   			 #
 #NUS ISS MTech Basic Elective Recommendation System.     #
-#This is a free software distributed under the GNU GPL.  #
-#Feel free to redistribute.                              #
-#Mail us at intelect-ke25[at]gmail[dot]com				       #								 
-##########################################################
+This is a free software distributed under the GNU GPL.  
+Feel free to redistribute.                              
+Mail us at getnpk[at]gmail[dot]com		 								 
+
 
 The main features of InElect: 
 
