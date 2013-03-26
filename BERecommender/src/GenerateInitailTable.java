@@ -3,15 +3,19 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.io.File;
-
 import java.util.ArrayList;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.JTableHeader;
 
+/*
+ * 
+ * Initail minimilistic output.
+ * 
+ * */
 
-class GenerateTable extends JFrame {
+class GenerateInitialTable extends JFrame {
 
 	private	JPanel		topPanel;
 	private	JTable		table;
@@ -20,9 +24,11 @@ class GenerateTable extends JFrame {
 	private JMenuBar menubar;
 	private JMenu file;
 	private JMenuItem export;
+	private JMenuItem expand;
 	private JMenuItem keys;
 	
-	public GenerateTable(ArrayList<Elective> electives){
+	
+	public GenerateInitialTable(final ArrayList<Elective> electives){
 		
 		
 		setTitle( "Basic Elective Recommendations" );
@@ -35,34 +41,28 @@ class GenerateTable extends JFrame {
 		getContentPane().add( topPanel );
 
 		// Create columns names
-		String columnNames[] = { "CODE", "ELECTIVE", "STREAM","FULLTIME","PARTTIME","TYPE","PGMING","MODE","PREQS","FAVOUR" };
+		String columnNames[] = { "ELECTIVE","FULLTIME","PARTTIME","FAVOUR" };
 
 		// Create multidata array
-		String[][] dataValues = new String[electives.size()][10];
+		String[][] dataValues = new String[electives.size()][4];
 		
 		ArrayList<String> values = new ArrayList<String>();
 		
-		String[] valuesArray = new String[electives.size() * 10];
+		String[] valuesArray = new String[electives.size() * 4];
 		
 		// Store all data.
 		for (Elective e: electives){
-			values.add(e.getCode());
 			values.add(e.getName());
-			values.add(e.getStream());
 			values.add(e.getSetf());
 			values.add(e.getSetp());
-			values.add(e.getType());
-			values.add(e.getPrg());
-			values.add(e.getMode());
-			values.add(e.getPreq());
 			values.add(e.getCf());
 		}
 		
 		values.toArray(valuesArray);
 		
 		for (int i=0; i<electives.size(); i++){
-			for (int j=0; j<10; j++){
-				dataValues[i][j] = valuesArray[j + i*10];
+			for (int j=0; j<4; j++){
+				dataValues[i][j] = valuesArray[j + i*4];
 			}
 		}
 		
@@ -73,7 +73,7 @@ class GenerateTable extends JFrame {
 		table = new JTable( dataValues, columnNames );
 		table.setDefaultRenderer(Object.class, renderer);
 		
-		table.getColumnModel().getColumn(1).setPreferredWidth(200);
+		table.getColumnModel().getColumn(1).setPreferredWidth(160);
 		
 		//table.getColumnModel().setColumnMargin(10);
 		
@@ -103,7 +103,7 @@ class GenerateTable extends JFrame {
 	          public void actionPerformed(ActionEvent event) {
 	        	  JFileChooser jfc = new JFileChooser();
 	        	  jfc.setDialogTitle("Specify a file to save.");
-	        	  int userSelection = jfc.showSaveDialog(GenerateTable.this);
+	        	  int userSelection = jfc.showSaveDialog(GenerateInitialTable.this);
 	        	  
 	        	  if (userSelection == JFileChooser.APPROVE_OPTION){
 	        		  File fileToSave = jfc.getSelectedFile();
@@ -115,6 +115,18 @@ class GenerateTable extends JFrame {
 	      });
 	      file.add(export);
 	      
+	      expand = new JMenuItem("Expand");
+	      expand.setMnemonic(KeyEvent.VK_X);
+	      expand.setToolTipText("Get more details regarding the electives.");
+	      expand.addActionListener(new ActionListener(){
+
+			public void actionPerformed(ActionEvent event) {
+				new GenerateTable(electives);
+			}
+	    	  
+	      });
+	      
+	      file.add(expand);
 	      
 	      keys = new JMenuItem("Keys");
 	      keys.setMnemonic(KeyEvent.VK_X);
@@ -128,6 +140,7 @@ class GenerateTable extends JFrame {
 	      });
 	      
 	      file.add(keys);
+	      
 	      
 	      
 	      menubar.add(file);
@@ -151,9 +164,9 @@ class GenerateTable extends JFrame {
 			        c.setBackground(Color.LIGHT_GRAY);
 			    else
 			        c.setBackground(table.getBackground());
-			    if (column == 9 || column == 1){
+			    if (column == 0 || column == 3){
 			    	c.setBackground(new Color(208, 242, 240));
-			    	c.setFont(new Font("Serif", Font.BOLD, 15));
+			        c.setFont(new Font("Serif", Font.BOLD, 15));
 			    }
 			}
 			return c; 

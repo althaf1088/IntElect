@@ -48,9 +48,10 @@ class BERecommender implements ActionListener
         }
       
       
+      
       JFrame frame = new JFrame(autoResources.getString("Title"));  
       frame.getContentPane().setLayout(new GridLayout(3,1));  
-      frame.setSize(510,300); //350x200     
+      frame.setSize(510,380); //350x200     
       frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);  
       frame.setResizable(false);
       
@@ -137,8 +138,8 @@ class BERecommender implements ActionListener
 
 		public void actionPerformed(ActionEvent event) {
 			String line = System.getProperty("line.separator");
-			String names= "Abhimanyu Sarvagyam" + line + "Dinesh Charan R J" + line + "Karthikeyan K"
-					 + line +  "Nitin P Kumar" + line + "Mail us at:  getnpk[at]gmail[dot]com";
+			String names= "ABI" + line + "DC" + line + "KK"
+					 + line +  "NPK" + line + "Mail us at:  intelect-ke25[at]gmail[dot]com";
 			JOptionPane.showMessageDialog(null, names, "Credits", 1);
 		}
     	  
@@ -368,7 +369,7 @@ class BERecommender implements ActionListener
     		  System.out.println(e);
     	  
     	  //JOptionPane.showMessageDialog(null, "Recommended " + recoString, "Your Recommendations!", 1);
-    	  GenerateTable result = new GenerateTable(list);
+    	  GenerateInitialTable result = new GenerateInitialTable(list);
     	  
       }
       else if (ae.getActionCommand().equals("Prev"))
