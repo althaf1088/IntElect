@@ -1,6 +1,6 @@
 ##########################################################
 #InElect v0.1                   			 #
-#NUS ISS MTech Basic Elective Recommendation System.     #
+#Basic Elective Recommendation System.     #
 This is a free software distributed under the GNU GPL.  
 Feel free to redistribute.                              
 Mail us at getnpk[at]gmail[dot]com		 								 
