@@ -1,9 +1,6 @@
-##########################################################
-#InElect v0.1                 				 #
-#Basic Elective Recommendation System.                   #
-#This is a free software distributed under the GNU GPL.  #
-#Feel free to redistribute.                              #
-##########################################################
+
+##InElect v0.1                 				 
+Basic Elective Recommendation System.                   
 
 * **Main Features**
 
