@@ -1,9 +1,10 @@
 ;;;======================================================
 ;;; 	Basic Electives Expert System
 ;;;
-;;;     This expert system suggests some electives
-;;;     that you may wish you take up for your M.Tech
-;;;		course.
+;;;     This expert system suggests electives
+;;;     that you may wish you take up for your Masters
+;;;     based on your user profile and interests.
+;;;
 ;;;
 ;;;======================================================
 
